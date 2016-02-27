@@ -40,8 +40,9 @@ depending on your application's needs.
 ## Create CMDB Data Files
  
 The shim looks in two locations to find data files. In order of precedence:
-1. `/var/lib/cmdb` -- typically used at deployment time
-2. `~/.cmdb` -- useful for developers when testing the app
+
+  1. `/var/lib/cmdb` -- typically at deployment time
+  2. `~/.cmdb` -- useful for developers when testing the app
 
 The base name (minus extension) of each file is important; it determines the top-level name of
 the keys in that file and it *must be unique* across all of the directories. For instance,
