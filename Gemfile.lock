@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cmdb (2.6.0)
+    cmdb (0.1.0)
       diplomat (~> 0.15)
       listen (~> 3.0)
       trollop (~> 2.0)
