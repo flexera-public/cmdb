@@ -13,6 +13,16 @@ module CMDB
       check_overlap(namespaces)
 
       @sources = []
+      # Load from consul source first if one is available.
+      if !ConsulSource.url.nil?
+        if ConsulSource.prefixes.nil? || ConsulSource.prefixes.empty?
+          @sources << ConsulSource.new('')
+        else
+          ConsulSource.prefixes.each do |prefix|
+            @sources << ConsulSource.new(prefix)
+          end
+        end
+      end
       # Register valid sources with CMDB
       namespaces.each do |_, v|
         @sources << v.first

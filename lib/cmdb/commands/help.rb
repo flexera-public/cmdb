@@ -33,6 +33,13 @@ Where [options] are selected from:
         opt :dir,
             "Directory to scan for key-replacement tokens in data files",
             :type => :string
+        opt :consul_url,
+            "The URL for talking to consul",
+            :type => :string
+        opt :consul_prefix,
+            "The prefix to use when getting keys from consul, can be specified more than once",
+            :type => :string,
+            :multi => true
         opt :keys,
             "Override search path(s) for CMDB key files",
             :type => :strings

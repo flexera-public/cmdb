@@ -33,6 +33,13 @@ Where [options] are selected from:
         opt :dir,
             "Directory to scan for key-replacement tokens in data files",
             :type => :string
+        opt :consul_url,
+             "The URL for talking to consul",
+             :type => :string
+        opt :consul_prefix,
+             "The prefix to use when getting keys from consul, can be specified more than once",
+             :type => :string,
+             :multi => true
         opt :keys,
             "Override search path(s) for CMDB key files",
             :type => :strings
@@ -86,6 +93,8 @@ Where [options] are selected from:
     def initialize(command, options={})
       @command         = command
       @dir             = options[:dir]
+      @consul_url      = options[:consul_url]
+      @consul_prefixes = options[:consul_prefix]
       @keys            = options[:keys] || []
       @pretend         = options[:pretend]
       @reload          = options[:reload]
@@ -96,6 +105,12 @@ Where [options] are selected from:
 
       unless @keys.empty?
         CMDB::FileSource.base_directories = @keys
+      end
+      unless @consul_url.nil?
+        CMDB::ConsulSource.url = @consul_url
+      end
+      if !@consul_prefixes.nil? && !@consul_prefixes.empty?
+        CMDB::ConsulSource.prefixes = @consul_prefixes
       end
 
       if options[:quiet]

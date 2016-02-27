@@ -6,7 +6,7 @@
 CMDB is a Ruby interface for consuming data from one or more configuration management databases
 (CMDBs). It is intended to support multiple CM technologies, including:
   - JSON/YAML files on a local disk
-  - (someday) consul
+  - consul
   - (someday) etcd
   - (someday) ZooKeeper
 
