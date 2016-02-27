@@ -1,0 +1,13 @@
+sudo: false
+language: ruby
+rvm:
+- 2.1
+bundler_args: --without development
+before_install:
+- gem install --no-document -v '~> 1.10' bundler
+before_script:
+- bundle install
+script: 
+- bundle exec rake ci:spec
+- bundle exec rake ci:cucumber
+
