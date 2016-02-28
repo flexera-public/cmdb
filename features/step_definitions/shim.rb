@@ -1,104 +1,37 @@
-require 'cucumber/rspec/doubles'
-
-# Run the shim as a subprocess
-Given /^a shim with parameters "(.*)" running webrick$/ do |options|
-  step(%Q{I run the shim with argv "#{options} -- rackup -s webrick -p #{app_port}"})
-
-  # Wait for app to start up before we return from this step
-  step(%Q{the output should include "I am up and running"}) unless @shim_die_on_startup
-end
-
-Given /^\$([A-Z0-9_]+) is "(.*)"$/ do |key, value|
-  app_env[key] = value
-end
-
-# Run the shim as a subprocess with the specified options
-When(/^I run the shim with argv "(.*)"$/) do |options|
-  keydirs = "--keys #{fake_var_lib} #{fake_home}/.cmdb"
-  script = File.expand_path('../../../exe/cmdb', __FILE__)
-  cmd = "bundle exec #{script} shim #{keydirs} #{options}"
-
-  Cucumber.logger.debug("bash> #{cmd}\n")
-  Bundler.with_clean_env do
-    ENV['DIE_DIE_DIE'] = 'yes please' if @shim_die_on_startup
-    app_env.each_pair { |k, v| ENV[k] = v }
-
-    Dir.chdir(app_root) do
-      @shim_command = Backticks.new(cmd)
-    end
-  end
-end
-
-Then(/^"(.*)" should look like:$/) do |filename, content|
-  filename = File.join(app_root, filename)
-  file = File.read(filename)
-
-  parsed_file = YAML.load(file)
-  parsed_content = YAML.load(content)
-
-  parsed_file.should == parsed_content
-end
-
-Then /^the shim should (succeed|fail)$/ do |pass_fail|
-  # wait for shim to exit if it was run as a subprocess
-  if @shim_command && @shim_command.status.nil?
-    @shim_command.join
-    @shim_exitstatus = @shim_command.status.exitstatus
-  end
-
-  if pass_fail == 'succeed'
-    @shim_exitstatus.should eq(0)
-  else
-    @shim_exitstatus.should_not eq(0)
-  end
-end
-
-Then /^the shim exitstatus should be ([0-9]+)$/ do |status|
-  @shim_command.pid.should be_a(Integer)
-  @shim_command.join
-  @shim_exitstatus = @shim_command.status.exitstatus
-
-  @shim_exitstatus.should eq(Integer(status))
-end
-
-
-And /^the output should (not )?include "(.*)"$/ do |negatory, message|
-  if @shim_command
-    # Shim was run as a subprocess; look at its stdout
-    @shim_command.join(3)
-    @shim_output = @shim_command.captured_output
-  else
-    # Shim was run in-process; make sure test rigging initialized captured
-    # its output
-    @shim_output.should_not be_nil
-    @shim_output = @shim_output.string if @shim_output.is_a?(StringIO)
-  end
+# Construct a command object in process to test setuid, which can't easily
+# be tested in a subprocess.
+When /^I run the shim with(out)? "--user=?(.*)"$/ do |negatory, user|
+  command = ['ls']
+  @shim_output = StringIO.new
+  @shim_logger = Logger.new(@shim_output)
 
   if negatory
-    @shim_output.should_not include(message)
+    @shim = CMDB::Commands::Shim.new(command, :quiet => true)
   else
-    @shim_output.should include(message)
+    @shim = CMDB::Commands::Shim.new(command, :quiet => true, :user => user)
   end
+
+  CMDB.log = @shim_logger
 end
 
-And /^the output should have keys: (.*)$/ do |kvs|
-  if @shim_command
-    # Shim was run as a subprocess; look at its stdout
-    @shim_command.join(3)
-    @shim_output = @shim_command.captured_output
-  else
-    # Shim was run in-process; make sure test rigging initialized captured
-    # its output
-    @shim_output.should_not be_nil
-    @shim_output = @shim_output.string if @shim_output.is_a?(StringIO)
-  end
+# Run the shim in-process; stub syscalls to verify correct behavior without
+# doing anything nasty.
+Then /^the shim should (not )?setuid( to "(.*)")?$/ do |negatory, _, user|
+  command = ['ls']
+  begin
+    allow(@shim).to receive(:exec).with(*command)
+    allow(CMDB::Commands::Shim).to receive(:drop_privileges)
 
-  kvs = kvs.split(/;/)
-  kvs = kvs.inject({}) { |h, kv| p = kv.split('=') ; h[p.first] = p.last ; h }
+    if negatory
+      expect(CMDB::Commands::Shim).not_to receive(:drop_privileges)
+    else
+      expect(CMDB::Commands::Shim).to receive(:drop_privileges).with(user)
+    end
 
-  mismatched = []
-  kvs.each do |k, v|
-    mismatched << k unless @shim_output.include?(k + '=' + v)
+    @shim.run
+    @output = @shim_output.string
+    @exitstatus = 0
+  rescue SystemExit => e
+    @exitstatus = e.status
   end
-  mismatched.should be_empty
 end

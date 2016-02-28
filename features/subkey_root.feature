@@ -22,12 +22,12 @@ Feature: promote subkeys to root
     """
 
   Scenario: tolerate missing subkey
-    When I run the shim with argv "--env --root=staging env"
-    Then the shim should succeed
+    When I run cmdb shim with argv "--env --root=staging env"
+    Then the command should succeed
     And the output should include "SCRUMPTIOUS=true"
 
   Scenario: specialize for staging
-    When I run the shim with argv "--env --root=staging env"
-    Then the shim should succeed
+    When I run cmdb shim with argv "--env --root=staging env"
+    Then the command should succeed
     And the output should include "CHEWY=false"
     And the output should not include "NOT_MY_CIRCUS"

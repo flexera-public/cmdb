@@ -129,19 +129,19 @@ After do |scenario|
   FileUtils.rm_rf(app_path('config'))
 
   # Make sure we shut down the shim process (and hopefully any child processes)
-  if @shim_command
-    Cucumber.logger.debug("waiting for shim (pid #{@shim_command.pid}) to die\n")
+  if @command
+    Cucumber.logger.debug("waiting for shim (pid #{@command.pid}) to die\n")
 
     begin
-      Process.kill('QUIT', @shim_command.pid)
-      @shim_command.join
+      Process.kill('QUIT', @command.pid)
+      @command.join
     rescue
       Cucumber.logger.debug("shim is already dead (#{$!})\n")
     end
 
     if scenario.failed?
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-      text = @shim_command.captured_output + @shim_command.captured_error
+      text = @command.captured_output + @command.captured_error
       text.split(/[\n\r]+/).each do |line|
         Cucumber.logger.debug("!!! #{line}\n")
       end

@@ -12,21 +12,21 @@ Feature: shim filesystem watch
     """
 
   Scenario: signal when a file is changed
-    Given a shim with parameters "--reload=common.debug.enabled" running webrick
+    Given cmdb shim with argv "--reload=common.debug.enabled" running webrick
     When I touch "Gemfile"
     Then the output should include "I got a SIGHUP"
 
   Scenario: ignore dotfiles
-    Given a shim with parameters "--reload=common.debug.enabled" running webrick
+    Given cmdb shim with argv "--reload=common.debug.enabled" running webrick
     When I touch ".some_stupid_dotfile"
     Then the output should not include "I got a SIGHUP"
 
   Scenario: custom signal
-    Given a shim with parameters "--reload=common.debug.enabled --reload-signal=USR2" running webrick
+    Given cmdb shim with argv "--reload=common.debug.enabled --reload-signal=USR2" running webrick
     When I touch "Gemfile"
     Then the output should include "I got a SIGUSR2"
 
   Scenario: sudden death
     Given a startup bug in the app
-    And a shim with parameters "--reload=common.debug.enabled --reload-signal=USR2" running webrick
-    Then the shim exitstatus should be 42
+    And cmdb shim with argv "--reload=common.debug.enabled --reload-signal=USR2" running webrick
+    Then the exitstatus should be 42

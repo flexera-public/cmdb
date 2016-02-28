@@ -10,7 +10,7 @@ end
 
 # Ask the fixture app to simulate failure on startup
 Given /^a startup bug in the app$/ do
-  @shim_die_on_startup = true
+  @command_die = true
 end
 
 # Create a file under the app (e.g. that contains replacement tokens).
@@ -19,6 +19,10 @@ Given(/^an app file "(.*)" containing:$/) do |filename, content|
   filename = File.join(app_root, filename)
   FileUtils.mkdir_p(File.dirname(filename))
   File.open(filename, 'w') { |f| f.write(content) }
+end
+
+Given /^\$([A-Z0-9_]+) is "(.*)"$/ do |key, value|
+  app_env[key] = value
 end
 
 # Change mtime for an app file

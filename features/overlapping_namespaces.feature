@@ -16,8 +16,8 @@ Feature: file sources with overlapping namespaces
     {"alas": "friends"}
     """
     And RACK_ENV is "development"
-    When I run the shim with argv "--dir=."
-    Then the shim should succeed
+    When I run cmdb shim with argv "--dir=."
+    Then the command should succeed
 
   Scenario: disallow overlap in production
     Given a homedir file "app1.json" containing:
@@ -25,5 +25,5 @@ Feature: file sources with overlapping namespaces
     {"alas": "friends"}
     """
     And RACK_ENV is "production"
-    When I run the shim with argv "--dir=."
-    Then the shim should fail
+    When I run cmdb shim with argv "--dir=."
+    Then the command should fail

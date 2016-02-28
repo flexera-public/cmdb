@@ -7,7 +7,7 @@ Feature: shim filesystem UNwatch
     Given a trivial app
 
   Scenario: ignore changed files
-    Given a shim with parameters "--reload=common.debug.enabled" running webrick
+    Given cmdb shim with argv "--reload=common.debug.enabled" running webrick
     And an etc file "common.yml" containing:
     """
     debug:
@@ -17,7 +17,7 @@ Feature: shim filesystem UNwatch
     Then the output should not include "I got a SIGHUP"
 
   Scenario: ignore new files
-    Given a shim with parameters "--reload=common.debug.enabled" running webrick
+    Given cmdb shim with argv "--reload=common.debug.enabled" running webrick
     And an etc file "common.yml" containing:
     """
     debug:
@@ -30,7 +30,7 @@ Feature: shim filesystem UNwatch
     Then the output should not include "I got a SIGHUP"
 
   Scenario: ignore new files
-    Given a shim with parameters "--reload=does.not.exist" running webrick
+    Given cmdb shim with argv "--reload=does.not.exist" running webrick
     And an etc file "common.yml" containing:
     """
     debug:

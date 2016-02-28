@@ -9,9 +9,9 @@ Feature: shim drop privileges using setuid
   Scenario: run normally
     When I run the shim without "--user"
     Then the shim should not setuid
-    And the shim should succeed
+    And the command should succeed
 
   Scenario: run as www-data
     When I run the shim with "--user=www-data"
     Then the shim should setuid to "www-data"
-    And the shim should succeed
+    And the command should succeed
