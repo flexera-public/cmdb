@@ -33,12 +33,12 @@ The gem has two primary interfaces:
   environment yourself.
 
 The CMDB gem is friendly to 12-factor and "Rails-style" apps and can be used with or without the shim,
-depending on your application's needs. 
+depending on your application's needs.
 
 # Getting Started
 
 ## Create CMDB Data Files
- 
+
 The shim looks in two locations to find data files. In order of precedence:
 
   1. `/var/lib/cmdb` -- typically at deployment time
@@ -60,7 +60,7 @@ the following contents:
 
 ## Invoke the CMDB Shim
 
-For non-Ruby applications, or for situations where CMDB values are required 
+For non-Ruby applications, or for situations where CMDB values are required
 outside of the context of interpreted code, use `cmdb shim` to run
 your application. The shim can do several things for you:
 
@@ -84,8 +84,8 @@ for CMDB values that are serialized to the environment (as a JSON document, in t
 
 ### Rewriting configuration files with CMDB values
 
-If the `--dir` option is provided, the shim recursively scans your working 
-directory (`Dir.pwd`) for data files that contain replacement tokens; when a token is 
+If the `--dir` option is provided, the shim recursively scans your working
+directory (`Dir.pwd`) for data files that contain replacement tokens; when a token is
 found, it substitutes the corresponding CMDB key's value.
 
 Replacement tokens look like this: `<<name.of.my.key>>` and can appear anywhere in a file as a YAML
@@ -94,7 +94,7 @@ or JSON _value_ (but never a key).
 Replacement tokens should appear inside string literals in your configuration files so they don't
 invalidate syntax or render the files unparsable by other tools.
 
-The shim performs replacement in-memory and saves all of the edits at once, making the rewrite 
+The shim performs replacement in-memory and saves all of the edits at once, making the rewrite
 operation nearly atomic. If any keys are missing, then no files are changed on disk and the shim
 exits with a helpful error message.
 
@@ -116,7 +116,7 @@ I can run the following command in my application's root directory:
 
     bundle exec cmdb shim --dir=config rackup
 
-This will rewrite the files under config, replacing my configuration files as 
+This will rewrite the files under config, replacing my configuration files as
 follows:
 
     # config/database.yml
@@ -173,6 +173,27 @@ value of a CMDB key can be a string, boolean, number, nil, or a list of any of t
 
 CMDB keys *cannot* contain maps/hashes, nor can lists contain differently-typed data.
 
+When a CMDB key is accessed through the Ruby API or referenced with a file-rewrite <<token>>, its
+name always begins with the file or path name of its *source* (JSON file, consul path, etc).
+
+When a CMDB key is written into the process environment or accessed via `Source#to_h`, its name
+is "bare" and the source name is irrelevant.
+
+If we use a `--consul-prefix` of `/kv/rightscale/intregration/shard403/common`
+then a key names would look like `common.debug.enabled` and environment names
+would look like `DEBUG_ENABLED`. The same is true if we load a `common.json`
+file source from `/var/lib/cmdb`.
+
+A future version of cmdb will harmonize the treatment of names; the prefix
+will be insignificant to the key name and keys will look like environment
+variables.
+
+## Network Data Sources
+
+To read from a consul server, pass `--consul-url` with a consul server address
+and `--consul-prefix` one or more times with a top-level path to treat as a
+named source.
+
 ## Disk-Based Data Sources
 
 When the CMDB interface is initialized, it searches two directories for YAML files:
@@ -213,10 +234,10 @@ on the value of RACK_ENV or RAILS_ENV:
   - unset, development or test: CMDB chooses the highest-precedence file and ignores the others
     after printing a warning. Files in `/etc` win over files in `$HOME`, which win over
     files in the working directory.
-     
+
   - any other environment: CMDB fails with an error message that describes the problem and
     the locations of the overlapping files.
-   
+
 ### Ambiguous Key Names
 
 Consider a file that defines the following variables:
@@ -245,7 +266,3 @@ of the keys could change if the structure of the YML file changes.
 For this reason, any YAML file that defines an "ambiguous" key name will cause an error at
 initialization time. To avoid ambiguous key names, think of your YAML file as a tree and remember
 that _leaf nodes must define data_ and _internal nodes must define structure_.
-
-## Network Data Sources
-
-TODO: add support for etcd or similar
