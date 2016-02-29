@@ -1,39 +1,41 @@
 # CMDB
 
-[![TravisCI][travis_ci_img]](https://magnum.travis-ci.com/rightscale/cmdb)
-[travis_ci_img]: https://magnum.travis-ci.com/rightscale/cmdb.svg?token=ETyVMY7RGypDf6U8z6jc&branch=master
+[![TravisCI][travis_ci_img]](https://travis-ci.org/rightscale/cmdb)
+[travis_ci_img]: https://travis-ci.org/rightscale/cmdb.svg?branch=master
+
+*NOTE:* this gem is under heavy development and it is likely that v3 will contain several interface-breaking
+changes and simplifications. We encourage you to play with our toys and give us feedback on how you would
+like to see the project evolve, but if you use this gem for production-grade software, please make sure to
+pin to version `~> 2.6` in your Gemfile to avoid breakage!
 
 CMDB is a Ruby interface for consuming data from one or more configuration management databases
-(CMDBs). It is intended to support multiple CM technologies, including:
+(CMDBs) and making that information available to Web applications.
+
+It is intended to support multiple CM technologies, including:
   - JSON/YAML files on a local disk
   - consul
   - (someday) etcd
   - (someday) ZooKeeper
-
-The CMDB's command-line tool can also facilitate debugging by watching your application's files
-and sending SIGHUP (or the signal of your choice) to the app server if anything changes.
 
 Maintained by
  - [RightScale Inc.](https://www.rightscale.com)
 
 ## Why should I use this gem?
 
-By using a standardized API for querying inputs, your application is decoupled from the underlying
-configuration management database that our Operations team is using. Today we happen to use JSON
-files that live under /etc/rightscale, but tomorrow we might use a key/value store such as etcd or
-consul (possibly in combination with flat files). This gem will deal with all of that complexity
-and provide you with a simple interface for reading your app's configuration.
+CMDB supports two primary use cases:
+
+  1. Decouple your modern (12-factor) application from the CM mechanism that is used to deploy it,
+     transforming CMDB keys and values into the enviroment variables that your app expects.
+  2. Help you deploy your "legacy" application that expects its configuration to be written to
+     disk files, rewriting those files with data taken from the CMDB.
 
 The gem has two primary interfaces:
-- The `cmdb shim` command populates the environment with config data and/or rewrites hardcoded
+- The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
   config files, then spawns your application. It can also be told to watch the filesystem for changes and
   send a signal e.g. `SIGHUP` to your application, bringing reload-on-edit functionality to any app.
-- The `CMDB::Interface` object provides a programmatic API for querying configuration. Its `#to_h`
+- The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_h`
   method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
-  environment yourself.
-
-The CMDB gem is friendly to 12-factor and "Rails-style" apps and can be used with or without the shim,
-depending on your application's needs.
+  environment yourself, without using the shim.
 
 # Getting Started
 

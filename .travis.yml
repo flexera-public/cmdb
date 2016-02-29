@@ -8,6 +8,5 @@ before_install:
 before_script:
 - bundle install
 script: 
-- bundle exec rake ci:spec
-- bundle exec rake ci:cucumber
-
+- bundle exec rake spec
+- bundle exec rake cucumber
