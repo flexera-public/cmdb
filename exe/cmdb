@@ -3,7 +3,9 @@
 
 require 'rubygems'
 require 'trollop'
+
 require 'cmdb'
+require 'cmdb/commands'
 
 if (gemspec = Gem.loaded_specs['cmdb'])
   gemspec_version = gemspec.version
@@ -46,6 +48,9 @@ Trollop.with_standard_exception_handling p do
   cmd = ARGV.shift
   klass = commands[cmd]
 
-  (klass && klass.create.run) ||
+  if klass
+    klass.create.run
+  else
     raise(ArgumentError, "Unrecognized command #{cmd}")
+  end
 end

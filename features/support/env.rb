@@ -137,7 +137,7 @@ After do |scenario|
       Process.kill('QUIT', @shim_command.pid)
       @shim_command.join
     rescue
-      Cucumber.logger.debug("shim is already dead ({$ERROR_INFO})\n")
+      Cucumber.logger.debug("shim is already dead (#{$ERROR_INFO})\n")
     end
 
     if scenario.failed?
