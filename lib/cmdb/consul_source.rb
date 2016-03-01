@@ -51,8 +51,7 @@ module CMDB
         dotted_key = item[:key].split('/').join('.')
         key = dotted_prefix == '' ? dotted_key : dotted_key.split("#{dotted_prefix}.").last
         value = process_value(item[:value])
-        puts "Key: #{key}, Value: #{value}"
-        block.call(dotted_key.split("#{dotted_prefix}.").last, process_value(item[:value]))
+        block.call(key, value)
       end
     rescue Diplomat::KeyNotFound
     end
