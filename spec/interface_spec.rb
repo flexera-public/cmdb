@@ -1,3 +1,4 @@
+# encoding: utf-8
 describe CMDB::Interface do
   @@subject = CMDB::Interface.new
   before(:all) do

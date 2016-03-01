@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'set'
 require 'singleton'
 
@@ -62,7 +63,7 @@ module CMDB
 
     # @param [URI] url filesystem or network location of the bad value
     # @param [String] context brief description of where data was found e.g. 'CMDB data file' or 'input config file'
-    def initialize(url, context=nil)
+    def initialize(url, context = nil)
       @url = url
       super("Malformed data encountered #{(' in ' + context) if context}")
     end

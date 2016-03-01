@@ -1,3 +1,4 @@
+# encoding: utf-8
 Then /^<<([^>]*)>> should be nil$/ do |key|
   cmdb.get(key).should be_nil
 end
@@ -24,9 +25,14 @@ Then /^<<([^>]*)>> should be (\[.*\])$/ do |key, array|
   cmdb.get(key).should == array
 end
 
-Then /^the code should raise ([A-Z0-9]*)$/ do |classname|
-  klass = eval(classname)
-  expect {
+Then(/^the code should raise CMDB::BadData$/) do
+  expect do
     cmdb.get('bogus')
-  }.to raise_error(klass)
+  end.to raise_error(CMDB::BadData)
+end
+
+Then(/^the code should raise CMDB::BadValue$/) do
+  expect do
+    cmdb.get('bogus')
+  end.to raise_error(CMDB::BadValue)
 end

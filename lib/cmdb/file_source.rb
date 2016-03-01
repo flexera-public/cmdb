@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'uri'
 
 module CMDB
@@ -12,29 +13,30 @@ module CMDB
     # @return [URI] a file:// URL describing where this source's data comes from
     attr_reader :prefix, :url
 
-    @@base_directories = ['/var/lib/cmdb', File.expand_path('~/.cmdb')]
+    @base_directories = ['/var/lib/cmdb', File.expand_path('~/.cmdb')]
 
     # List of directories that will be searched (in order) for YML files at load time.
     # @return [Array] collection of String
-    def self.base_directories
-      @@base_directories
+    class << self
+      attr_reader :base_directories
     end
 
     # @param [Array] bd collection of String absolute paths to search for YML files
-    def self.base_directories=(bd)
-      @@base_directories = bd
+    class << self
+      attr_writer :base_directories
     end
 
     # Construct a new FileSource from an input YML file.
     # @param [String,Pathname] filename path to a YAML file
+    # @param [String] root optional subpath in data to "mount"
+    # @param [String] prefix optional prefix of
     # @raise [BadData] if the file's content is malformed
-    def initialize(filename, root=nil)
+    def initialize(filename, root = nil, prefix = File.basename(filename, '.*'))
+      @data = {}
+      @prefix = prefix
       filename = File.expand_path(filename)
       @url = URI.parse("file://#{filename}")
-      @prefix = File.basename(filename, ".*")
       @extension = File.extname(filename)
-      @data = {}
-
       raw_bytes = File.read(filename)
       raw_data  = nil
 
@@ -45,10 +47,10 @@ module CMDB
         when /ya?ml$/i
           raw_data = YAML.load(raw_bytes)
         else
-          raise BadData.new(self.url, 'file with unknown extension; expected js(on) or y(a)ml')
+          raise BadData.new(url, 'file with unknown extension; expected js(on) or y(a)ml')
         end
-      rescue Exception
-        raise BadData.new(self.url, 'CMDB data file')
+      rescue StandardError
+        raise BadData.new(url, 'CMDB data file')
       end
 
       raw_data = raw_data[root] if !root.nil? && raw_data.key?(root)
@@ -67,9 +69,9 @@ module CMDB
     # @yield every key/value in the source
     # @yieldparam [String] key
     # @yieldparam [Object] value
-    def each_pair(&block)
+    def each_pair(&_block)
       # Strip the prefix in the key and call the block
-      @data.each_pair { |k, v| block.call(k.split("#{@prefix}.").last, v) }
+      @data.each_pair { |k, v| yield(k.split("#{@prefix}.").last, v) }
     end
 
     private
@@ -82,19 +84,19 @@ module CMDB
           flatten(value, key, output)
         when Array
           if value.all? { |e| e.is_a?(String) } ||
-               value.all? { |e| e.is_a?(Numeric) } ||
-               value.all? { |e| e == true } ||
-               value.all? { |e| e == false }
+             value.all? { |e| e.is_a?(Numeric) } ||
+             value.all? { |e| e == true } ||
+             value.all? { |e| e == false }
             output[key] = value
           else
             # mismatched arrays: not allowed
-            raise BadValue.new(self.url, key, value)
+            raise BadValue.new(url, key, value)
           end
         when String, Numeric, TrueClass, FalseClass
           output[key] = value
         else
           # nil and anything else: not allowed
-          raise BadValue.new(self.url, key, value)
+          raise BadValue.new(url, key, value)
         end
       end
     end

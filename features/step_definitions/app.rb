@@ -1,3 +1,4 @@
+# encoding: utf-8
 Given /^a trivial app$/ do
   FileUtils.cp_r(Dir[File.join(fixtures_root, '*')], app_root)
 

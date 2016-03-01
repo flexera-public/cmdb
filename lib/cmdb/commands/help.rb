@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'logger'
 require 'listen'
 
@@ -31,45 +32,46 @@ cmdb shim [options] -- <command_to_exec> [options_for_command]
 Where [options] are selected from:
         EOS
         opt :dir,
-            "Directory to scan for key-replacement tokens in data files",
-            :type => :string
+            'Directory to scan for key-replacement tokens in data files',
+            type: :string
         opt :consul_url,
-            "The URL for talking to consul",
-            :type => :string
+            'The URL for talking to consul',
+            type: :string
         opt :consul_prefix,
-            "The prefix to use when getting keys from consul, can be specified more than once",
-            :type => :string,
-            :multi => true
+            'The prefix to use when getting keys from consul, can be specified more than once',
+            type: :string,
+            multi: true
         opt :keys,
-            "Override search path(s) for CMDB key files",
-            :type => :strings
+            'Override search path(s) for CMDB key files',
+            type: :strings
         opt :pretend,
-            "Check for errors, but do not actually launch the app or rewrite files",
-            :default => false
+            'Check for errors, but do not actually launch the app or rewrite files',
+            default: false
         opt :quiet,
             "Don't print any output",
-            :default => false
+            default: false
         opt :reload,
-            "CMDB key that enables reload-on-edit",
-            :type => :string
+            'CMDB key that enables reload-on-edit',
+            type: :string
         opt :reload_signal,
-            "Signal to send to app server when code is edited",
-            :type => :string,
-            :default => "HUP"
+            'Signal to send to app server when code is edited',
+            type: :string,
+            default: 'HUP'
         opt :env,
             "Add CMDB keys to the app server's process environment",
-            :default => false
+            default: false
         opt :user,
-            "Switch to named user before executing app",
-            :type => :string
+            'Switch to named user before executing app',
+            type: :string
         opt :root,
-            "Promote named subkey to the root when it is present in a namespace",
-            :type => :string
+            'Promote named subkey to the root when it is present in a namespace',
+            type: :string
       end
 
-      self.new(ARGV, options)
+      new(ARGV, options)
     end
 
-
+    def run
+    end
   end
 end

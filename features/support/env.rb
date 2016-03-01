@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'tmpdir'
 
 require 'backticks'
@@ -11,7 +12,7 @@ end
 STDOUT.sync = STDERR.sync = true
 
 lib_dir = File.expand_path('../../../lib', __FILE__)
-$: << lib_dir unless $:.include?(lib_dir)
+$LOAD_PATH << lib_dir unless $LOAD_PATH.include?(lib_dir)
 
 require 'cmdb'
 
@@ -29,7 +30,7 @@ module FakeAppHelper
   end
 
   def app_port
-    @app_port ||= (3000 + rand(20000))
+    @app_port ||= (3000 + rand(20_000))
   end
 
   def app_env
@@ -63,7 +64,7 @@ module FakeAppHelper
   end
 
   # Run a shell command in app_dir, e.g. a rake task
-  def app_shell(cmd, options={})
+  def app_shell(cmd, options = {})
     ignore_errors = options[:ignore_errors] || false
 
     Dir.chdir(app_root) do
@@ -72,7 +73,7 @@ module FakeAppHelper
         runner = Backticks::Runner.new(interactive: true)
         command = runner.command(cmd)
         command.join
-        $?.success?.should == true unless ignore_errors
+        $CHILD_STATUS.success?.should == true unless ignore_errors
         command.captured_output
       end
     end
@@ -103,8 +104,8 @@ Before do |scenario|
   ENV['RACK_ENV'] = nil
   ENV['HOME'] = fake_home
   CMDB::FileSource.base_directories = [
-      fake_var_lib,
-      File.join(fake_home, '.cmdb'),
+    fake_var_lib,
+    File.join(fake_home, '.cmdb')
   ]
 
   FileUtils.mkdir_p(app_path('config'))
@@ -136,7 +137,7 @@ After do |scenario|
       Process.kill('QUIT', @shim_command.pid)
       @shim_command.join
     rescue
-      Cucumber.logger.debug("shim is already dead (#{$!})\n")
+      Cucumber.logger.debug("shim is already dead (#{$ERROR_INFO})\n")
     end
 
     if scenario.failed?

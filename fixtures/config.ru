@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'rubygems'
 require 'bundler/setup'
 require 'sinatra'
@@ -24,6 +25,6 @@ if ENV['DIE_DIE_DIE']
   puts "I am dying as requested by ENV['DIE_DIE_DIE']"
   exit(42)
 else
-  puts "I am up and running"
+  puts 'I am up and running'
   run Sinatra::Application
 end

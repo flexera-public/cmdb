@@ -1,10 +1,13 @@
 #!/usr/bin/env ruby
+# encoding: utf-8
 
 require 'rubygems'
 require 'trollop'
-require 'cmdb'
 
-if gemspec = Gem.loaded_specs['cmdb']
+require 'cmdb'
+require 'cmdb/commands'
+
+if (gemspec = Gem.loaded_specs['cmdb'])
   gemspec_version = gemspec.version
 else
   require_relative '../lib/cmdb/version'
@@ -39,7 +42,7 @@ To get help on a command:
   stop_on commands.keys
 end
 
-opts = Trollop::with_standard_exception_handling p do
+Trollop.with_standard_exception_handling p do
   raise Trollop::HelpNeeded if ARGV.empty?
   p.parse ARGV
   cmd = ARGV.shift
@@ -48,6 +51,6 @@ opts = Trollop::with_standard_exception_handling p do
   if klass
     klass.create.run
   else
-    raise ArgumentError, "Unrecognized command #{cmd}"
+    raise(ArgumentError, "Unrecognized command #{cmd}")
   end
 end

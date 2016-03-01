@@ -1,10 +1,11 @@
+# encoding: utf-8
 require 'json'
 
 module CMDB
   class Interface
     # Create a new instance of the CMDB interface.
     # @option settings [String] root name of subkey to consider as root
-    def initialize(settings={})
+    def initialize(settings = {})
       @root = settings[:root] if settings
 
       namespaces = {}
@@ -14,7 +15,7 @@ module CMDB
 
       @sources = []
       # Load from consul source first if one is available.
-      if !ConsulSource.url.nil?
+      unless ConsulSource.url.nil?
         if ConsulSource.prefixes.nil? || ConsulSource.prefixes.empty?
           @sources << ConsulSource.new('')
         else
@@ -109,7 +110,7 @@ module CMDB
 
       # Also consult working dir in development environments
       if CMDB.development?
-        local_dir   = File.join(Dir.pwd, '.cmdb')
+        local_dir = File.join(Dir.pwd, '.cmdb')
         directories += [local_dir]
       end
 
@@ -136,18 +137,15 @@ module CMDB
       overlapping.each do |ns, sources|
         exc = ValueConflict.new(ns, sources)
 
-        if CMDB.development?
-          CMDB.log.warn exc.message
-        else
-          raise exc
-        end
+        CMDB.log.warn exc.message
+        raise exc unless CMDB.development?
       end
     end
 
     # Make an environment variable out of a key name
     def key_to_env(key)
       env_name = key
-      env_name.gsub!(/[^A-Za-z0-9_]+/,'_')
+      env_name.gsub!(/[^A-Za-z0-9_]+/, '_')
       env_name.upcase!
       env_name
     end

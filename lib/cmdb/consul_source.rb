@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'diplomat'
 
 module CMDB
@@ -5,31 +6,33 @@ module CMDB
     # Regular expression to match array values
     ARRAY_VALUE = /^\[(.*)\]$/
 
+    ### Class variables
+
+    class << self
+      attr_writer :url
+    end
+
+    class << self
+      attr_reader :url
+    end
+
+    class << self
+      attr_writer :prefixes
+    end
+
+    class << self
+      attr_reader :prefixes
+    end
+
+    ### Instance variables
+
     # The url to communicate with consul
-    @@url = nil
-    # The prefixes to use when getting keys from consul
-    @@prefixes = nil
-
-    def self.url=(url)
-      @@url = url
-    end
-
-    def self.url
-      @@url
-    end
-
-    def self.prefixes=(prefixes)
-      @@prefixes = prefixes
-    end
-
-    def self.prefixes
-      @@prefixes
-    end
+    @url = nil
 
     # Initialize the configuration for consul source
     def initialize(prefix)
       Diplomat.configure do |config|
-        config.url = @@url
+        config.url = self.class.url
       end
       @prefix = prefix
     end
@@ -38,12 +41,14 @@ module CMDB
     def get(key)
       value = Diplomat::Kv.get(dot_to_slash(key))
       process_value(value)
+    rescue TypeError
+      puts 'hi'
     rescue Diplomat::KeyNotFound
       nil
     end
 
     # Not implemented for consul source
-    def each_pair(&block)
+    def each_pair(&_block)
       prefix = @prefix || ''
       all = Diplomat::Kv.get(prefix, recurse: true)
       all.each do |item|
@@ -51,21 +56,23 @@ module CMDB
         dotted_key = item[:key].split('/').join('.')
         key = dotted_prefix == '' ? dotted_key : dotted_key.split("#{dotted_prefix}.").last
         value = process_value(item[:value])
-        puts "Key: #{key}, Value: #{value}"
-        block.call(dotted_key.split("#{dotted_prefix}.").last, process_value(item[:value]))
+        yield(key, value)
       end
     rescue Diplomat::KeyNotFound
+      CMDB.log.warn exc.message
     end
 
     private
 
+    # Lazily parse a value, which may be valid JSON or may be a bare string.
+    # TODO: concat a regexp to match JSONable things
     def process_value(val)
-      return JSON.load(val)
-    rescue Exception
-      return val
+      JSON.load(val)
+    rescue JSON::ParserError
+      val
     end
 
-    # Converts the dotted notation to a slashed notation. If a @@prefix is set, it applies the prefix.
+    # Converts the dotted notation to a slashed notation. If a @prefix is set, it applies the prefix.
     # @example
     #   "common.proxy.endpoints" => common/proxy/endpoints (or) shard403/common/proxy/endpoints
     def dot_to_slash(key)
@@ -74,4 +81,3 @@ module CMDB
     end
   end
 end
-
