@@ -1,3 +1,4 @@
+# encoding: utf-8
 Then /^<<([^>]*)>> should be nil$/ do |key|
   cmdb.get(key).should be_nil
 end
@@ -26,7 +27,7 @@ end
 
 Then /^the code should raise ([A-Z0-9]*)$/ do |classname|
   klass = eval(classname)
-  expect {
+  expect do
     cmdb.get('bogus')
-  }.to raise_error(klass)
+  end.to raise_error(klass)
 end

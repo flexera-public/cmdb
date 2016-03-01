@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'logger'
 require 'listen'
 
@@ -31,43 +32,43 @@ cmdb shim [options] -- <command_to_exec> [options_for_command]
 Where [options] are selected from:
         EOS
         opt :dir,
-            "Directory to scan for key-replacement tokens in data files",
-            :type => :string
+            'Directory to scan for key-replacement tokens in data files',
+            type: :string
         opt :consul_url,
-             "The URL for talking to consul",
-             :type => :string
+            'The URL for talking to consul',
+            type: :string
         opt :consul_prefix,
-             "The prefix to use when getting keys from consul, can be specified more than once",
-             :type => :string,
-             :multi => true
+            'The prefix to use when getting keys from consul, can be specified more than once',
+            type: :string,
+            multi: true
         opt :keys,
-            "Override search path(s) for CMDB key files",
-            :type => :strings
+            'Override search path(s) for CMDB key files',
+            type: :strings
         opt :pretend,
-            "Check for errors, but do not actually launch the app or rewrite files",
-            :default => false
+            'Check for errors, but do not actually launch the app or rewrite files',
+            default: false
         opt :quiet,
             "Don't print any output",
-            :default => false
+            default: false
         opt :reload,
-            "CMDB key that enables reload-on-edit",
-            :type => :string
+            'CMDB key that enables reload-on-edit',
+            type: :string
         opt :reload_signal,
-            "Signal to send to app server when code is edited",
-            :type => :string,
-            :default => "HUP"
+            'Signal to send to app server when code is edited',
+            type: :string,
+            default: 'HUP'
         opt :env,
             "Add CMDB keys to the app server's process environment",
-            :default => false
+            default: false
         opt :user,
-            "Switch to named user before executing app",
-          :type => :string
+            'Switch to named user before executing app',
+            type: :string
         opt :root,
-            "Promote named subkey to the root when it is present in a namespace",
-          :type => :string
+            'Promote named subkey to the root when it is present in a namespace',
+            type: :string
       end
 
-      self.new(ARGV, options)
+      new(ARGV, options)
     end
 
     # Irrevocably change the current user for this Unix process by calling the
@@ -90,7 +91,7 @@ Where [options] are selected from:
     # Create a Shim.
     # @param [Array] command collection of string to pass to Kernel#exec; 0th element is the command name
     # @options [String] :condif_dir
-    def initialize(command, options={})
+    def initialize(command, options = {})
       @command         = command
       @dir             = options[:dir]
       @consul_url      = options[:consul_url]
@@ -103,32 +104,26 @@ Where [options] are selected from:
       @user            = options[:user]
       @root            = options[:root]
 
-      unless @keys.empty?
-        CMDB::FileSource.base_directories = @keys
-      end
-      unless @consul_url.nil?
-        CMDB::ConsulSource.url = @consul_url
-      end
+      CMDB::FileSource.base_directories = @keys unless @keys.empty?
+      CMDB::ConsulSource.url = @consul_url unless @consul_url.nil?
       if !@consul_prefixes.nil? && !@consul_prefixes.empty?
         CMDB::ConsulSource.prefixes = @consul_prefixes
       end
 
-      if options[:quiet]
-        CMDB.log.level = Logger::FATAL
-      end
+      CMDB.log.level = Logger::FATAL if options[:quiet]
     end
 
     # Run the shim.
     #
     # @raise [SystemExit] if something goes wrong
     def run
-      @cmdb = CMDB::Interface.new(:root=>@root)
+      @cmdb = CMDB::Interface.new(root: @root)
 
       rewrote   = rewrite_files
       populated = populate_environment
 
-      if (!rewrote && !populated && !@pretend && @command.empty?)
-        CMDB.log.warn "CMDB: nothing to do; please specify --dir, --env, or a command to run"
+      if !rewrote && !populated && !@pretend && @command.empty?
+        CMDB.log.warn 'CMDB: nothing to do; please specify --dir, --env, or a command to run'
         exit 7
       end
 
@@ -170,7 +165,7 @@ Where [options] are selected from:
 
       CMDB.log.info 'Starting rewrite of configuration...'
 
-      rewriter  = CMDB::Rewriter.new(@dir)
+      rewriter = CMDB::Rewriter.new(@dir)
 
       total = rewriter.rewrite(@cmdb)
 
@@ -178,7 +173,7 @@ Where [options] are selected from:
         missing = rewriter.missing_keys.map { |k| "  #{k}" }.join("\n")
         CMDB.log.error "Cannot rewrite configuration; #{rewriter.missing_keys.size} missing keys:\n#{missing}"
 
-        exit -rewriter.missing_keys.size
+        exit(-rewriter.missing_keys.size)
       end
 
       report_rewrite(total)
@@ -236,7 +231,7 @@ Where [options] are selected from:
         exec_app
       end
 
-      CMDB.log.info("App (pid %d) has been forked; watching %s" % [pid, ::Dir.pwd])
+      CMDB.log.info('App (pid %d) has been forked; watching %s' % [pid, ::Dir.pwd])
 
       t0 = Time.at(0)
 
@@ -250,39 +245,39 @@ Where [options] are selected from:
           dt = Time.now - t0
           if dt > 15
             Process.kill(@signal, pid)
-            CMDB.log.info "Sent SIG%s to app (pid %d) because (modified,created,deleted)=(%d,%d,%d)" %
+            CMDB.log.info 'Sent SIG%s to app (pid %d) because (modified,created,deleted)=(%d,%d,%d)' %
                           [@signal, pid, modified.size, added.size, removed.size]
             t0 = Time.now
           else
-            CMDB.log.error "Skipped SIG%s to app (pid %d) due to timeout (%d)" %
+            CMDB.log.error 'Skipped SIG%s to app (pid %d) due to timeout (%d)' %
                            [@signal, pid, dt]
           end
         rescue
-          CMDB.log.error "Skipped SIG%s to app (pid %d) due to %s" %
-                        [@signal, pid, $!.to_s]
+          CMDB.log.error 'Skipped SIG%s to app (pid %d) due to %s' %
+                         [@signal, pid, $ERROR_INFO.to_s]
         end
       end
 
       listener.start
 
-      wpid, wstatus = nil, nil
+      wpid = nil
+      wstatus = nil
 
       loop do
         begin
           wpid, wstatus = Process.wait2(-1, Process::WNOHANG)
-          if wpid == pid && wstatus.exited?
-            break
-          elsif wpid
-            CMDB.log.info("Descendant (pid %d) has waited with %s" % [wpid, wstatus.inspect])
+          if wpid
+            break if wstatus.exited?
+            CMDB.log.info('Descendant (pid %d) has waited with %s' % [wpid, wstatus.inspect])
           end
         rescue
-          CMDB.log.error "Skipped wait2 to app (pid %d) due to %s" %
-                         [pid, $!.to_s]
+          CMDB.log.error 'Skipped wait2 to app (pid %d) due to %s' %
+                         [pid, $ERROR_INFO.to_s]
         end
         sleep(1)
       end
 
-      CMDB.log.info("App (pid %d) has exited with %s" % [wpid, wstatus.inspect])
+      CMDB.log.info('App (pid %d) has exited with %s' % [wpid, wstatus.inspect])
       listener.stop
       exit(wstatus.exitstatus || 43)
     end

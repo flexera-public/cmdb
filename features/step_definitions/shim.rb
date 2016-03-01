@@ -1,11 +1,12 @@
+# encoding: utf-8
 require 'cucumber/rspec/doubles'
 
 # Run the shim as a subprocess
 Given /^a shim with parameters "(.*)" running webrick$/ do |options|
-  step(%Q{I run the shim with argv "#{options} -- rackup -s webrick -p #{app_port}"})
+  step(%(I run the shim with argv "#{options} -- rackup -s webrick -p #{app_port}"))
 
   # Wait for app to start up before we return from this step
-  step(%Q{the output should include "I am up and running"}) unless @shim_die_on_startup
+  step(%(the output should include "I am up and running")) unless @shim_die_on_startup
 end
 
 Given /^\$([A-Z0-9_]+) is "(.*)"$/ do |key, value|
@@ -61,7 +62,6 @@ Then /^the shim exitstatus should be ([0-9]+)$/ do |status|
   @shim_exitstatus.should eq(Integer(status))
 end
 
-
 And /^the output should (not )?include "(.*)"$/ do |negatory, message|
   if @shim_command
     # Shim was run as a subprocess; look at its stdout
@@ -94,7 +94,7 @@ And /^the output should have keys: (.*)$/ do |kvs|
   end
 
   kvs = kvs.split(/;/)
-  kvs = kvs.inject({}) { |h, kv| p = kv.split('=') ; h[p.first] = p.last ; h }
+  kvs = kvs.inject({}) { |h, kv| p = kv.split('='); h[p.first] = p.last; h }
 
   mismatched = []
   kvs.each do |k, v|

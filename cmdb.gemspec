@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['RightScale']
   spec.email         = ['rubygems@rightscale.com']
 
-  spec.summary       = %q{Command-line tool for configuration manegement databases}
-  spec.description   = %q{Reads CMDB variables from files, Consul, and elsewhere.}
+  spec.summary       = 'Command-line tool for configuration manegement databases'
+  spec.description   = 'Reads CMDB variables from files, Consul, and elsewhere.'
   spec.homepage      = 'https://github.com/rightscale/cmdb'
   spec.license       = 'MIT'
 
@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.required_ruby_version = Gem::Requirement.new("~> 2.0")
+  spec.required_ruby_version = Gem::Requirement.new('~> 2.0')
 
   spec.add_dependency 'listen', '~> 3.0'
   spec.add_dependency 'diplomat', '~> 0.15'

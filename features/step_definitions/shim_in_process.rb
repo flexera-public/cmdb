@@ -1,14 +1,15 @@
+# encoding: utf-8
 # Construct a shim in process; do not actually run it.
 When /^I run the shim with(out)? "--user=?(.*)"$/ do |negatory, user|
   command = ['ls']
   @shim_in_process_output = StringIO.new
   @shim_logger = Logger.new(@shim_in_process_output)
 
-  if negatory
-    @shim = CMDB::Commands::Shim.new(command, :quiet => true)
-  else
-    @shim = CMDB::Commands::Shim.new(command, :quiet => true, :user => user)
-  end
+  @shim = if negatory
+            CMDB::Commands::Shim.new(command, quiet: true)
+          else
+            CMDB::Commands::Shim.new(command, quiet: true, user: user)
+          end
 
   CMDB.log = @shim_logger
 end

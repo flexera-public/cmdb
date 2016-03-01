@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'yaml'
 require 'json'
 
@@ -30,13 +31,13 @@ module CMDB
       total = 0
       @rewriters.each { |rw| total += rw.rewrite(cmdb) }
 
-      @missing_keys = @rewriters.map { |rw| rw.missing_keys}.flatten.uniq.sort
+      @missing_keys = @rewriters.map(&:missing_keys).flatten.uniq.sort
 
       total
     end
 
     def save
-      @rewriters.each { |rw| rw.save }
+      @rewriters.each(&:save)
       true
     end
 

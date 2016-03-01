@@ -1,10 +1,11 @@
+# encoding: utf-8
 describe CMDB::Commands::Shim do
   describe '.drop_privileges' do
     let(:login) { 'some-random-unix-login' }
     let(:bad_login) { 'some-invalid-login' }
     let(:uid) { 4242 }
     let(:gid) { 4242 }
-    let(:pwent) { double(Etc::Passwd, :uid=>uid, :gid=>gid) }
+    let(:pwent) { double(Etc::Passwd, uid: uid, gid: gid) }
 
     before do
       allow(Etc).to receive(:getpwnam).with(login).and_return(pwent)
@@ -19,9 +20,9 @@ describe CMDB::Commands::Shim do
     end
 
     it 'raises when the login does not exist' do
-      expect {
+      expect do
         described_class.drop_privileges(bad_login)
-      }.to raise_exception(ArgumentError)
+      end.to raise_exception(ArgumentError)
     end
 
     it 'sets the real, effective and saved uids' do
