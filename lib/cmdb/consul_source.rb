@@ -58,7 +58,7 @@ module CMDB
         value = process_value(item[:value])
         yield(key, value)
       end
-    rescue Diplomat::KeyNotFound
+    rescue Diplomat::KeyNotFound => exc
       CMDB.log.warn exc.message
     end
 
