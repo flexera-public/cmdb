@@ -47,7 +47,7 @@ module CMDB
       nil
     end
 
-    # Not implemented for consul source
+    # Iterate through all keys with a given prefix in consul
     def each_pair(&_block)
       prefix = @prefix || ''
       all = Diplomat::Kv.get(prefix, recurse: true)

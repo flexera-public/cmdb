@@ -10,8 +10,11 @@ module CMDB
   #    source = FileSource.new('/tmp/my.yml') # contains a top-level stanza named "database"
   #    source['my']['database']['host'] # => 'db1-1.example.com'
   class FileSource
+    # @return [String] the distinct prefix of this source's keys
+    attr_reader :prefix
+
     # @return [URI] a file:// URL describing where this source's data comes from
-    attr_reader :prefix, :url
+    attr_reader :url
 
     @base_directories = ['/var/lib/cmdb', File.expand_path('~/.cmdb')]
 

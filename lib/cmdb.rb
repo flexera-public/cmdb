@@ -10,7 +10,7 @@ module CMDB
   # Regexp that matches valid key names. Key names consist of one or more dot-separated words;
   # each word must begin with a lowercase alpha character and may contain alphanumerics or
   # underscores.
-  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/
+  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/i
 
   class Error < StandardError; end
 
@@ -135,6 +135,7 @@ module CMDB
 end
 
 require 'cmdb/consul_source'
+require 'cmdb/environment_source'
 require 'cmdb/file_source'
 require 'cmdb/interface'
 require 'cmdb/rewriter'

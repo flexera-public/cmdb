@@ -24,10 +24,14 @@ module CMDB
           end
         end
       end
-      # Register valid sources with CMDB
+
+      # Register file sources with CMDB
       namespaces.each do |_, v|
         @sources << v.first
       end
+
+      # Finally, register the environment as a source
+      @sources << CMDB::EnvironmentSource.new
     end
 
     # Retrieve the value of a CMDB key, searching all sources in the order they were initialized.
@@ -57,6 +61,20 @@ module CMDB
       get(key) || raise(MissingKey.new(key))
     end
 
+    # Set the value of a CMDB key.
+    #
+    # @return [Source,ni] the source that accepted the write, if any
+    def set(key, value)
+      @sources.reverse.each do |s|
+        if s.respond_to?(:set)
+          s.set(key, value)
+          return s
+        end
+      end
+
+      nil
+    end
+
     # Enumerate all of the keys in the CMDB.
     #
     # @yield every key/value in the CMDB
@@ -69,6 +87,19 @@ module CMDB
       end
 
       self
+    end
+
+    def search(prefix)
+      prefix = Regexp.new('^' + Regexp.escape(key_to_env(prefix)))
+      result = {}
+
+      @sources.each do |s|
+        s.each_pair do |k, v|
+          result[k] = v if k =~ prefix
+        end
+      end
+
+      result
     end
 
     # Transform the entire CMDB into a flat Hash that can be merged into ENV.
