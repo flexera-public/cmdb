@@ -15,3 +15,8 @@ require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec)
 
 task default: [:spec, :cucumber]
+
+desc 'Invoke cmdb shell in a Docker sandbox with toy consul server'
+task :sandbox do
+  exec 'docker-compose run cmdb'
+end

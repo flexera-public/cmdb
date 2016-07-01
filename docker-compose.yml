@@ -1,0 +1,17 @@
+version: "2"
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+services:
+  consul:
+    command: "agent -client=172.28.0.2 -bootstrap -server"
+    image: consul
+    networks:
+      default:
+        ipv4_address: 172.28.0.2
+  cmdb:
+    build: .
+    depends_on:
+      - consul
