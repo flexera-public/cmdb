@@ -39,12 +39,6 @@ Where [options] are selected from:
       @consul_prefixes = options[:consul_prefix]
       @keys            = options[:keys] || []
 
-      CMDB::FileSource.base_directories = @keys unless @keys.empty?
-      CMDB::ConsulSource.url = @consul_url unless @consul_url.nil?
-      if !@consul_prefixes.nil? && !@consul_prefixes.empty?
-        CMDB::ConsulSource.prefixes = @consul_prefixes
-      end
-
       CMDB.log.level = Logger::FATAL if options[:quiet]
     end
 
@@ -52,7 +46,7 @@ Where [options] are selected from:
     #
     # @raise [SystemExit] if something goes wrong
     def run
-      @cmdb = CMDB::Interface.new(root: @root)
+      @cmdb = CMDB::Interface.new
       @self = Self.new(cmdb)
       repl
     end

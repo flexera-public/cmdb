@@ -25,7 +25,8 @@ module CMDB
 
     # Set the value of a key.
     def set(key, value)
-      @env[dot_to_env(key)] = value.to_s
+      value = JSON.dump(value) unless value.is_a?(String)
+      @env[dot_to_env(key)] = value
     end
 
     # Enumerate the keys in this source, and their values.

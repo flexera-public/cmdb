@@ -2,35 +2,16 @@
 require 'uri'
 
 module CMDB
-  # Data source that is backed by a YAML file that lives in the filesystem. The name of the YAML
-  # file becomes the top-level key under which all values in the YAML are exposed, preserving
-  # their exact structure as parsed by YAML.
+  # Data source that is backed by a YAML/JSON file that lives in the filesystem. The name of the
+  # file becomes the top-level key under which all values in the file are exposed, preserving
+  # their exact structure as parsed by YAML/JSON.
   #
   # @example Use my.yml as a CMDB source
   #    source = FileSource.new('/tmp/my.yml') # contains a top-level stanza named "database"
   #    source['my']['database']['host'] # => 'db1-1.example.com'
-  class FileSource
-    # @return [String] the distinct prefix of this source's keys
-    attr_reader :prefix
-
-    # @return [URI] a file:// URL describing where this source's data comes from
-    attr_reader :url
-
-    @base_directories = ['/var/lib/cmdb', File.expand_path('~/.cmdb')]
-
-    # List of directories that will be searched (in order) for YML files at load time.
-    # @return [Array] collection of String
-    class << self
-      attr_reader :base_directories
-    end
-
-    # @param [Array] bd collection of String absolute paths to search for YML files
-    class << self
-      attr_writer :base_directories
-    end
-
-    # Construct a new FileSource from an input YML file.
-    # @param [String,Pathname] filename path to a YAML file
+  class FileSource < Source
+    # Construct a new FileSource from an input file.
+    # @param [String,Pathname] filename path to a file
     # @param [String] root optional subpath in data to "mount"
     # @param [String] prefix optional prefix of
     # @raise [BadData] if the file's content is malformed

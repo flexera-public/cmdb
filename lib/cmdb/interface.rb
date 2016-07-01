@@ -3,14 +3,12 @@ require 'json'
 
 module CMDB
   class Interface
-    # Create a new instance of the CMDB interface.
-    # @option settings [String] root name of subkey to consider as root
-    def initialize(settings = {})
-      @root = settings[:root] if settings
-
+    # Create a new instance of the CMDB interface with the specified sources.
+    # @param [Array] sources list of String or URI source locations
+    # @see Source.create for information on how to specify source URLs
+    def initialize(*sources)
       namespaces = {}
 
-      load_file_sources(namespaces)
       check_overlap(namespaces)
 
       @sources = []
@@ -133,32 +131,6 @@ module CMDB
     end
 
     private
-
-    # Scan for CMDB data files and index them by namespace
-    def load_file_sources(namespaces)
-      # Consult standard base directories for data files
-      directories = FileSource.base_directories
-
-      # Also consult working dir in development environments
-      if CMDB.development?
-        local_dir = File.join(Dir.pwd, '.cmdb')
-        directories += [local_dir]
-      end
-
-      directories.each do |dir|
-        (Dir.glob(File.join(dir, '*.js')) + Dir.glob(File.join(dir, '*.json'))).each do |filename|
-          source = FileSource.new(filename, @root)
-          namespaces[source.prefix] ||= []
-          namespaces[source.prefix] << source
-        end
-
-        (Dir.glob(File.join(dir, '*.yml')) + Dir.glob(File.join(dir, '*.yaml'))).each do |filename|
-          source = FileSource.new(filename, @root)
-          namespaces[source.prefix] ||= []
-          namespaces[source.prefix] << source
-        end
-      end
-    end
 
     # Check for overlapping namespaces and react appropriately. This can happen when a file
     # of a given name is located in more than one of the key-search directories. We tolerate

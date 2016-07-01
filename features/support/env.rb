@@ -99,15 +99,8 @@ Before do |scenario|
 
   @original_env = {}
   ENV.each_pair { |k, v| @original_env[k] = v }
-  @old_dirs = CMDB::FileSource.base_directories
 
   ENV['RACK_ENV'] = nil
-  ENV['HOME'] = fake_home
-  CMDB::FileSource.base_directories = [
-    fake_var_lib,
-    File.join(fake_home, '.cmdb')
-  ]
-
   FileUtils.mkdir_p(app_path('config'))
 
   # ensure that shim et al see PWD as app root
@@ -124,9 +117,6 @@ After do |scenario|
   ENV.keys.each { |k| ENV[k] = nil }
   @original_env.each_pair { |k, v| ENV[k] = v }
 
-  CMDB::FileSource.base_directories = @old_dirs
-  FileUtils.rm_rf(fake_var_lib) if File.directory?(fake_var_lib)
-  FileUtils.rm_rf(fake_home) if File.directory?(fake_home)
   FileUtils.rm_rf(app_path('config'))
 
   # Make sure we shut down the shim process (and hopefully any child processes)

@@ -1,3 +1,25 @@
+### 3.0.0rc1 (Unreleased)
+
+With this major version we introduce significant compatibility-breaking changes! Functions
+and options have been removed and we have rethought how sources are specified. Rather than
+have a hodgepodge of CLI options for each type of source, all sources are represented by
+URLs where the scheme tells the gem what type of source to create: `env:`, `file://`, or
+`consul://`.
+
+The gem no longer scans fixed directories for JSON/YML files on startup; you must explicitly
+provide all sources when you call `CMDB::Interface.new`. If you provide no sources then
+a single `env:` source will be used as the default.
+
+The option to specify a `--root` for the CMDB interface has been removed.
+
+An interactive shell command has been added that allows you to navigate the
+CMDB as if it were a filesystem with `ls`, `cd` and other commands. You can also
+set values with some sources, either from the shell or programatically by calling
+the `#set` method of the source.
+
+The dependency on Diplomat has been removed; we now speak to consul without a
+middleman.
+
 ### 2.6.0 (2016-03-01)
 
 Two new command line options are added to the shim
