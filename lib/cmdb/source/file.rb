@@ -7,10 +7,10 @@ module CMDB
   # their exact structure as parsed by YAML/JSON.
   #
   # @example Use my.yml as a CMDB source
-  #    source = FileSource.new('/tmp/my.yml') # contains a top-level stanza named "database"
+  #    source = Source::File.new('/tmp/my.yml') # contains a top-level stanza named "database"
   #    source['my']['database']['host'] # => 'db1-1.example.com'
-  class FileSource < Source
-    # Construct a new FileSource from an input file.
+  class Source::File < Source
+    # Construct a new Source::File from an input file.
     # @param [String,Pathname] filename path to a file
     # @param [String] root optional subpath in data to "mount"
     # @param [String] prefix optional prefix of

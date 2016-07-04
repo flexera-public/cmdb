@@ -134,10 +134,7 @@ module CMDB
   end
 end
 
-require 'cmdb/environment_source'
-require 'cmdb/file_source'
-require 'cmdb/network_source'
-require 'cmdb/consul_source'
+require 'cmdb/source'
 require 'cmdb/interface'
 require 'cmdb/rewriter'
 require 'cmdb/commands'

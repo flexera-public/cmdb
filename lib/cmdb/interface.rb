@@ -13,12 +13,12 @@ module CMDB
 
       @sources = []
       # Load from consul source first if one is available.
-      unless ConsulSource.url.nil?
-        if ConsulSource.prefixes.nil? || ConsulSource.prefixes.empty?
-          @sources << ConsulSource.new('')
+      unless Source::Consul.url.nil?
+        if Source::Consul.prefixes.nil? || Source::Consul.prefixes.empty?
+          @sources << Source::Consul.new('')
         else
-          ConsulSource.prefixes.each do |prefix|
-            @sources << ConsulSource.new(prefix)
+          Source::Consul.prefixes.each do |prefix|
+            @sources << Source::Consul.new(prefix)
           end
         end
       end
@@ -29,7 +29,7 @@ module CMDB
       end
 
       # Finally, register the environment as a source
-      @sources << CMDB::EnvironmentSource.new
+      @sources << CMDB::Source::Environment.new
     end
 
     # Retrieve the value of a CMDB key, searching all sources in the order they were initialized.

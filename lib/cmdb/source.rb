@@ -39,14 +39,19 @@ module CMDB
         curi.scheme = 'http'
         curi.port ||= 8500
         curi.path = ''
-        ConsulSource.new(URI.parse(curi.to_s), prefix)
+        Source::Consul.new(URI.parse(curi.to_s), prefix)
       when 'file'
-        FileSource.new(uri.path)
+        Source::File.new(uri.path)
       when 'env'
-        EnvironmentSource.new
+        Source::Environment.new
       else
         raise ArgumentError, "Unrecognized URL scheme '#{uri.scheme}'"
       end
     end
   end
 end
+
+require 'cmdb/source/environment'
+require 'cmdb/source/file'
+require 'cmdb/source/network'
+require 'cmdb/source/consul'

@@ -1,5 +1,5 @@
 # encoding: utf-8
-describe CMDB::ConsulSource do
+describe CMDB::Source::Consul do
   let(:data) { { 'foo.bar' => 'foobar', 'baz' => [1, 2, 3], 'quux' => true } }
   let(:source_prefix) { 'common' }
   let(:source_key_env) { { 'FOO_BAR' => 'foobar', 'BAZ' => '[1,2,3]', 'QUUX' => 'true' } }
@@ -12,7 +12,7 @@ describe CMDB::ConsulSource do
   end
 
   before do
-    CMDB::ConsulSource.url = "http://localhost:8500"
+    CMDB::Source::Consul.url = "http://localhost:8500"
 
     stub_request(:get, "http://localhost:8500/v1/kv/common/common/foo/bar").
       to_return(:status => 200, :body => consul("foo/bar", "foobar"))
@@ -22,7 +22,7 @@ describe CMDB::ConsulSource do
       to_return(:status => 200, :body => consul("quux", "true"))
   end
 
-  subject { CMDB::ConsulSource.new('common') }
+  subject { CMDB::Source::Consul.new('common') }
 
   it_behaves_like 'a source'
 end

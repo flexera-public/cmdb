@@ -10,7 +10,8 @@ The gem no longer scans fixed directories for JSON/YML files on startup; you mus
 provide all sources when you call `CMDB::Interface.new`. If you provide no sources then
 a single `env:` source will be used as the default.
 
-The option to specify a `--root` for the CMDB interface has been removed.
+The option to specify a `--root` for the CMDB interface as a whole has been 
+removed.
 
 An interactive shell command has been added that allows you to navigate the
 CMDB as if it were a filesystem with `ls`, `cd` and other commands. You can also
@@ -19,6 +20,10 @@ the `#set` method of the source.
 
 The dependency on Diplomat has been removed; we now speak to consul without a
 middleman.
+
+All sources have a new common base class `Source`, which also serves as an
+enclosing namespace for all derived classes (`Source::Consul`, 
+`Source::Environment`, etc).
 
 ### 2.6.0 (2016-03-01)
 

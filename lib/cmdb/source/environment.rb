@@ -5,13 +5,13 @@ module CMDB
   # Data source that is backed by the process environment. Keys are natively
   # represented as UPPER_CASE_UNDERSCORE and all dotted keys are coerced to
   # native form before get/set.
-  class EnvironmentSource
+  class Source::Environment
     # @return [String] the empty string
     def prefix
       ''
     end
 
-    # Construct a new EnvironmentSource.
+    # Construct a new Source::Environment.
     def initialize(hash=ENV)
       @env = hash
     end

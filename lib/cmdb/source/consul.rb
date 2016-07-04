@@ -4,7 +4,7 @@ require 'net/http'
 require 'open-uri'
 
 module CMDB
-  class ConsulSource < NetworkSource
+  class Source::Consul < Source::Network
     # Regular expression to match array values
     ARRAY_VALUE = /^\[(.*)\]$/
 

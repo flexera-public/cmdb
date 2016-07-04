@@ -1,5 +1,5 @@
 module CMDB
-  class NetworkSource < Source
+  class Source::Network < Source
     def initialize(uri, prefix=nil)
       @uri = uri
       @prefix = prefix

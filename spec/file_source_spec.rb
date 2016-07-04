@@ -1,5 +1,5 @@
 # encoding: utf-8
-describe CMDB::FileSource do
+describe CMDB::Source::File do
   let(:data) { { 'foo.bar' => 'foobar', 'baz' => [1, 2, 3], 'quux' => true } }
   let(:source_prefix) { 'common' }
   let(:source_key_env) { { 'FOO_BAR' => 'foobar', 'BAZ' => '[1,2,3]', 'QUUX' => 'true' } }
@@ -19,7 +19,7 @@ describe CMDB::FileSource do
     data_file.unlink
   end
 
-  subject { CMDB::FileSource.new(data_file.path, nil, 'common') }
+  subject { CMDB::Source::File.new(data_file.path, nil, 'common') }
 
   it_behaves_like 'a source'
 end
