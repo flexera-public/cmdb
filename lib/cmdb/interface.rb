@@ -7,29 +7,16 @@ module CMDB
     # @param [Array] sources list of String or URI source locations
     # @see Source.create for information on how to specify source URLs
     def initialize(*sources)
-      namespaces = {}
-
-      check_overlap(namespaces)
-
-      @sources = []
-      # Load from consul source first if one is available.
-      unless Source::Consul.url.nil?
-        if Source::Consul.prefixes.nil? || Source::Consul.prefixes.empty?
-          @sources << Source::Consul.new('')
-        else
-          Source::Consul.prefixes.each do |prefix|
-            @sources << Source::Consul.new(prefix)
-          end
-        end
+      # ensure no two sources share a prefix
+      prefixes = {}
+      sources.each do |s|
+        next if s.prefix.nil?
+        prefixes[s.prefix] ||= []
+        prefixes[s.prefix] << s
       end
+      check_overlap(prefixes)
 
-      # Register file sources with CMDB
-      namespaces.each do |_, v|
-        @sources << v.first
-      end
-
-      # Finally, register the environment as a source
-      @sources << CMDB::Source::Environment.new
+      @sources = sources.dup
     end
 
     # Retrieve the value of a CMDB key, searching all sources in the order they were initialized.
@@ -132,16 +119,15 @@ module CMDB
 
     private
 
-    # Check for overlapping namespaces and react appropriately. This can happen when a file
-    # of a given name is located in more than one of the key-search directories. We tolerate
-    # this in development mode, but raise an exception otherwise.
-    def check_overlap(namespaces)
-      overlapping = namespaces.select { |_, sources| sources.size > 1 }
-      overlapping.each do |ns, sources|
-        exc = ValueConflict.new(ns, sources)
+    # Check that no two sources share a prefix. Raise an exception if any
+    # overlap is detected.
+    def check_overlap(prefix_sources)
+      overlapping = prefix_sources.select { |_, sources| sources.size > 1 }
+      overlapping.each do |p, sources|
+        exc = ValueConflict.new(p, sources)
 
-        CMDB.log.warn exc.message
-        raise exc unless CMDB.development?
+        CMDB.log.error exc.message
+        raise exc
       end
     end
 

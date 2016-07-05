@@ -19,7 +19,7 @@ describe CMDB::Source::File do
     data_file.unlink
   end
 
-  subject { CMDB::Source::File.new(data_file.path, nil, 'common') }
+  subject { CMDB::Source::File.new(data_file.path, 'common') }
 
   it_behaves_like 'a source'
 end

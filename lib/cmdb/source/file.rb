@@ -12,16 +12,15 @@ module CMDB
   class Source::File < Source
     # Construct a new Source::File from an input file.
     # @param [String,Pathname] filename path to a file
-    # @param [String] root optional subpath in data to "mount"
     # @param [String] prefix optional prefix of
     # @raise [BadData] if the file's content is malformed
-    def initialize(filename, root = nil, prefix = File.basename(filename, '.*'))
+    def initialize(filename, prefix = ::File.basename(filename, '.*'))
       @data = {}
       @prefix = prefix
-      filename = File.expand_path(filename)
+      filename = ::File.expand_path(filename)
       @url = URI.parse("file://#{filename}")
-      @extension = File.extname(filename)
-      raw_bytes = File.read(filename)
+      @extension = ::File.extname(filename)
+      raw_bytes = ::File.read(filename)
       raw_data  = nil
 
       begin
@@ -37,7 +36,6 @@ module CMDB
         raise BadData.new(url, 'CMDB data file')
       end
 
-      raw_data = raw_data[root] if !root.nil? && raw_data.key?(root)
       flatten(raw_data, @prefix, @data)
     end
 

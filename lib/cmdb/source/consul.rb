@@ -9,13 +9,14 @@ module CMDB
     ARRAY_VALUE = /^\[(.*)\]$/
 
     # Get a single key from consul
+    # @param [String] key dot-notation key
     def get(key)
       key = dot_to_slash(key)
       response = http_get path_to(key)
       case response
       when Array
         item = response.first
-        process_value(Base64.decode64(item['Value']))
+        load_value(Base64.decode64(item['Value']))
       when 404
         nil
       else
@@ -24,6 +25,7 @@ module CMDB
     end
 
     # Set a single key in consul.
+    # @param [String] key dot-notation key
     def set(key, value)
       key = dot_to_slash(key)
       http_put path_to(key), value
@@ -41,7 +43,7 @@ module CMDB
         dotted_prefix = @prefix.split('/').join('.')
         dotted_key = item['Key'].split('/').join('.')
         key = dotted_prefix == '' ? dotted_key : dotted_key.split("#{dotted_prefix}.").last
-        value = process_value(Base64.decode64(item['Value']))
+        value = load_value(Base64.decode64(item['Value']))
         yield(key, value)
       end
 
@@ -52,10 +54,10 @@ module CMDB
 
     # Given a key's relative path, return its absolute REST path in the consul
     # kv, including any prefix that was specified at startup.
-    def path_to(key)
-      p = '/v1/kv'
-      p << prefix unless prefix.empty?
-      p << key
+    def path_to(subkey)
+      p = '/v1/kv/'
+      (p << prefix << '/') unless prefix.empty?
+      p << subkey
       p
     end
   end

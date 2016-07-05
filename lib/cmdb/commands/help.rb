@@ -63,9 +63,6 @@ Where [options] are selected from:
         opt :user,
             'Switch to named user before executing app',
             type: :string
-        opt :root,
-            'Promote named subkey to the root when it is present in a namespace',
-            type: :string
       end
 
       new(ARGV, options)

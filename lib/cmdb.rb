@@ -126,12 +126,6 @@ module CMDB
   def log=(log)
     @log = log
   end
-
-  # Determine whether CMDB is running in a development environment.
-  # @return [Boolean]
-  def development?
-    DEVELOPMENT_ENVIRONMENTS.include?(ENV['RACK_ENV'] || ENV['RAILS_ENV'])
-  end
 end
 
 require 'cmdb/source'

@@ -1,9 +1,14 @@
 module CMDB
   class Source
-    # @return [nil,String] common dot-notation prefix of this source's keys, if any
+    # Determine the prefix of all keys provided by this source. No two sources can share
+    # a prefix, and no source's prefix can be a prefix of any other's.
+    #
+    # Some sources have no common prefix, in which case this reader returns nil.
+    #
+    # @return [nil,String] common and unique dot-notation prefix of this source's keys, if any
     attr_reader :prefix
 
-    # @return [URI] a file or network URL describing where this source's data comes from
+    # @return [URI] a URL describing where this source's data comes from
     attr_reader :url
 
     # Construct a source given a URI that identifies both the type of
@@ -39,7 +44,7 @@ module CMDB
         curi.scheme = 'http'
         curi.port ||= 8500
         curi.path = ''
-        Source::Consul.new(URI.parse(curi.to_s), prefix)
+        Source::Consul.new(URI.parse(curi.to_s))
       when 'file'
         Source::File.new(uri.path)
       when 'env'
@@ -48,6 +53,16 @@ module CMDB
         raise ArgumentError, "Unrecognized URL scheme '#{uri.scheme}'"
       end
     end
+
+    private
+
+    # Lazily parse a value, which may be valid JSON or may be a bare string.
+    def load_value(val)
+      JSON.load(val)
+    rescue JSON::ParserError
+      val
+    end
+
   end
 end
 

@@ -1,6 +1,8 @@
 module CMDB
   class Source::Network < Source
-    def initialize(uri, prefix=nil)
+    # @param [URI] uri
+    # @param [String] dot-notation prefix of all keys
+    def initialize(uri, prefix)
       @uri = uri
       @prefix = prefix
     end
@@ -24,7 +26,6 @@ module CMDB
       when 200..299
         return JSON.parse(response.body)
       else
-        debugger
         return response.code.to_i
       end
     end
@@ -54,19 +55,9 @@ module CMDB
       end
     end
 
-    # Lazily parse a value, which may be valid JSON or may be a bare string.
-    def process_value(val)
-      case val[0]
-      when /\[|\{/
-        JSON.load(val)
-      else
-        val
-      end
-    end
-
-    # Convert the dotted notation to a slashed notation. If a @prefix is set, apply the prefix.
+    # Convert dotted notation to slash-separated notation (i.e. path components)
+    # without an initial slash.
     def dot_to_slash(key)
-      key = "#{@prefix}.#{key}" unless @prefix.nil? || @prefix.empty?
       key.split('.').join('/')
     end
   end

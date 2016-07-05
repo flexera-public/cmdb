@@ -1,7 +1,9 @@
 v3
 ==
 
-Remove `--env` option and make it the default behavior
+Remove `--env` option and make it the default shim behavior
+
+Change `--dir` option to `--rewrite` option (& allow multiple occurrence)
 
 Get rid of namespace prefix from canonical CMDB key names
 
@@ -12,11 +14,8 @@ docker-swarm discovery URLs, that lets one specify:
   - someday an etcd (etcd://) or zookeeper (zk://) URL + prefix
 Respect ordering of sources as specified on command line.
 
-Remove `--reload` and `--reload-signal flags`.
-
-Add `--disjoint` flag & stop ensuring disjoint sources by default
-
-Transform `--dir` into `--rewrite`
+Change `--reload` so it's not conditional. Remove hard dependency on `listen`
+gem.
 
 Add `.cmdb/config` file option
 

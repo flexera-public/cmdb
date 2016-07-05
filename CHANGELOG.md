@@ -8,7 +8,9 @@ URLs where the scheme tells the gem what type of source to create: `env:`, `file
 
 The gem no longer scans fixed directories for JSON/YML files on startup; you must explicitly
 provide all sources when you call `CMDB::Interface.new`. If you provide no sources then
-a single `env:` source will be used as the default.
+a single `env:` source will be used as the default -- which is fairly useless, since the
+best most common use case is to take data _from_ other sources and put it _into_ the
+environment.
 
 The option to specify a `--root` for the CMDB interface as a whole has been 
 removed.
