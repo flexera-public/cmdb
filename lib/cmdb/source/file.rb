@@ -14,7 +14,7 @@ module CMDB
     # @param [String,Pathname] filename path to a file
     # @param [String] prefix optional prefix of
     # @raise [BadData] if the file's content is malformed
-    def initialize(filename, prefix = ::File.basename(filename, '.*'))
+    def initialize(filename, prefix)
       @data = {}
       @prefix = prefix
       filename = ::File.expand_path(filename)

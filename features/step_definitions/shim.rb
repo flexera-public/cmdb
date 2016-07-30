@@ -15,9 +15,8 @@ end
 
 # Run the shim as a subprocess with the specified options
 When(/^I run the shim with argv "(.*)"$/) do |options|
-  keydirs = "--keys #{fake_var_lib} #{fake_home}/.cmdb"
   script = File.expand_path('../../../exe/cmdb', __FILE__)
-  cmd = "bundle exec #{script} shim #{keydirs} #{options}"
+  cmd = "bundle exec #{script} shim #{options}"
 
   Cucumber.logger.debug("bash> #{cmd}\n")
   Bundler.with_clean_env do

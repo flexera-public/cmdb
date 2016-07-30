@@ -37,14 +37,6 @@ module FakeAppHelper
     @app_env ||= {}
   end
 
-  def fake_var_lib
-    fake_path('var', 'lib', 'cmdb')
-  end
-
-  def fake_home
-    fake_path('home')
-  end
-
   def fake_path(*args)
     path = fake_root
     until args.empty?
@@ -71,9 +63,9 @@ module FakeAppHelper
       Cucumber.logger.debug("bash> #{cmd}\n")
       Bundler.with_clean_env do
         runner = Backticks::Runner.new(interactive: true)
-        command = runner.command(cmd)
+        command = runner.run(cmd)
         command.join
-        $CHILD_STATUS.success?.should == true unless ignore_errors
+        command.status.success?.should == true unless ignore_errors
         command.captured_output
       end
     end
@@ -81,8 +73,15 @@ module FakeAppHelper
 end
 
 module ScenarioState
+  def sources
+    @sources ||= []
+  end
+
   def cmdb
-    @cmdb ||= CMDB::Interface.new
+    expect(@sources).not_to be_nil
+    expect(@sources).not_to be_empty
+    sources = @sources.map { |s| CMDB::Source.create s }
+    @cmdb ||= CMDB::Interface.new(*sources)
   end
 end
 

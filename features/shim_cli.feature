@@ -12,7 +12,7 @@ Feature: shim CLI validation
     Then the output should include "nothing to do"
 
   Scenario: succeed with pretend
-    When I run the shim with argv "--dir=. --pretend"
+    When I run the shim with argv "--rewrite=. --pretend"
     Then the shim should succeed
 
   Scenario: succeed with just a command

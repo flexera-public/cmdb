@@ -46,10 +46,8 @@ module CMDB
     def self.create(uri)
       uri = URI.parse(uri) if uri.is_a?(String)
 
-      if !uri.fragment.nil? && !uri.fragment.empty?
-        prefix = uri.fragment
-      elsif !uri.path.nil? && !uri.path.empty?
-        prefix = ::File.basename(uri.path)
+      if !uri.path.nil? && !uri.path.empty?
+        prefix = ::File.basename(uri.path, '.*')
       else
         prefix = nil
       end
@@ -62,7 +60,7 @@ module CMDB
         curi.path = ''
         Source::Consul.new(URI.parse(curi.to_s), prefix)
       when 'file'
-        Source::File.new(uri.path)
+        Source::File.new(uri.path, prefix)
       when 'env'
         Source::Environment.new
       else

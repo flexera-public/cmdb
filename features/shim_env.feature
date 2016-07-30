@@ -5,14 +5,14 @@ Feature: env-populating shim for 12-factor apps
 
   Background:
     Given a trivial app
-    And an etc file "app1.yml" containing:
+    Given a file source "/var/lib/cmdb/app1.yml" containing:
     """
     database:
       host: db1.example.com
       user: alibaba
       password: open sesame
     """
-    And an etc file "shared.yml" containing:
+    And a file source "/var/lib/cmdb/shared.yml" containing:
     """
     favorite:
       color: blue
@@ -29,7 +29,7 @@ Feature: env-populating shim for 12-factor apps
     Then the output should have keys: DATABASE_HOST=db1.example.com;FAVORITE_COLOR=blue;LUCKY_NUMBERS=[3,7];AGE=7.5;COFFEE=true
 
   Scenario: naming conflict
-    Given an etc file "interloper.yml" containing:
+    Given a file source "/var/lib/cmdb/interloper.yml" containing:
     """
     favorite:
       music: hip hop

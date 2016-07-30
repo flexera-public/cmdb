@@ -4,7 +4,7 @@ Feature: CMDB inputs from YAML files
   So we can store static inputs and audit changes to them
 
   Background:
-    Given an etc file "shard.json" containing:
+    Given a file source "/var/lib/cmdb/shard.json" containing:
     """
     {
       "id": 3,
@@ -16,7 +16,7 @@ Feature: CMDB inputs from YAML files
     """
 
   Scenario: common and app-specific files
-    Given an etc file "app1.json" containing:
+    Given a file source "/var/lib/cmdb/app1.json" containing:
     """
     {
       "database": {
@@ -31,7 +31,7 @@ Feature: CMDB inputs from YAML files
     And <<shard.name>> should be "lax.example.com"
 
   Scenario: structured and typed data
-    Given an etc file "app1.json" containing:
+    Given a file source "/var/lib/cmdb/app1.json" containing:
     """
     {
       "admins": [
@@ -50,14 +50,14 @@ Feature: CMDB inputs from YAML files
     And <<app1.sucky>> should be false
 
   Scenario: bad data
-    Given an etc file "app1.json" containing:
+    Given a file source "/var/lib/cmdb/app1.json" containing:
     """
     }}}} eye am nawt valid JSON {{
     """
     Then the code should raise CMDB::BadData
 
   Scenario: bad value
-    Given an etc file "app1.json" containing:
+    Given a file source "/var/lib/cmdb/app1.json" containing:
     """
     {
       "admins": [

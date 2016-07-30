@@ -41,22 +41,24 @@ can add as many sources as you'd like. All sources are specified as a URI,
 where the scheme tells CMDB which driver to use and the other parts of the
 URL determine how to locate the source.
 
-The URI's fragment, if provided, specifies the common prefix for all keys
-defined by that source. With no fragment, CMDB guesses a suitable prefix
-based on the URL's path. To specify _no_ prefix, use the empty fragment.
+Sources can optionally have a "prefix" which is used as a common prefix of all
+key names under the source. When CMDB can identify the prefix for your source,
+it makes merge operations more efficient, helps provide semantic context
+for your key names, and makes it easier to identify and avoid naming collisions
+between different sources.
 
 Examples:
 
   * `file:///var/lib/cmdb/myapp.yml` creates a file source with the prefix `myapp.`
-  * `file:///var/lib/cmdb/common.yml#` creates a file source with no prefix
   * `consul://localhost` creates a source with no key prefix that talks to a local
     consul agent on the standard port (8500)
-  * `consul://kv:18500#myapp` creates a source with the prefix `myapp.` that
+  * `consul://kv:18500/myapp` creates a source with the prefix `myapp.` that
     talks to a remote consul agent on a nonstandard port (18500)
   * `consul://localhost/mycorp/staging/myapp` creates a source with the prefix
     `myapp.` that has only keys that pertain to myapp. 
-  * `consul://localhost/mycorp/staging#` creates a source with an empty
-    prefix that has all keys in the staging environment
+  * `consul://localhost/mycorp/staging` creates a source with the prefix `staging.`
+    that has all keys in the staging environment. (It is probably a bad idea to
+    use this source with the `myapp` source in the example above!)
 
 To learn more about sources and prefixes, see "Data model," below.
 

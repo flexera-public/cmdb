@@ -6,7 +6,7 @@ Feature: config-file rewriting shim for legacy apps
   Background:
     Given a trivial app
     And RACK_ENV is "production"
-    And an etc file "app1.yml" containing:
+    And a file source "/var/lib/cmdb/app1.yml" containing:
     """
     database:
       host: db1.example.com
@@ -24,7 +24,7 @@ Feature: config-file rewriting shim for legacy apps
     development:
       dont: touch me
     """
-    When I run the shim with argv "--dir=config"
+    When I run the shim with argv "--rewrite=config"
     Then the shim should succeed
     And "config/database.yml" should look like:
     """
@@ -42,12 +42,12 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<app1.bad-key>>
     """
-    When I run the shim with argv "--dir=config"
+    When I run the shim with argv "--rewrite=config"
     Then the shim should fail
     And the output should include "CMDB: Bad Key: malformed CMDB key 'app1.bad-key'"
 
   Scenario: bad value
-    Given an etc file "bad.yml" containing:
+    Given a file source "/var/lib/cmdb/bad.yml" containing:
     """
     value:
       - {a: 1}
@@ -57,12 +57,12 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<bad.value>>
     """
-    When I run the shim with argv "--dir=config"
+    When I run the shim with argv "--rewrite=config"
     Then the shim should fail
     And the output should include "CMDB: Bad Value: illegal value for CMDB key 'bad.value' in source file:/"
 
   Scenario: bad data
-    Given an etc file "bad.yml" containing:
+    Given a file source "/var/lib/cmdb/bad.yml" containing:
     """
     {{{ take THIS, foul YAML parser!
     """
@@ -71,7 +71,7 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<bad.value>>
     """
-    When I run the shim with argv "--dir=config"
+    When I run the shim with argv "--rewrite=config"
     Then the shim should fail
     And the output should include "CMDB: Bad Data: malformed CMDB data in source file:/"
 
@@ -80,7 +80,7 @@ Feature: config-file rewriting shim for legacy apps
     """
     missing: <<app1.missing>>
     """
-    When I run the shim with argv "--dir=config"
+    When I run the shim with argv "--rewrite=config"
     Then the shim should fail
     And the output should include "Cannot rewrite configuration"
     And the output should include "app1.missing"
@@ -94,7 +94,7 @@ Feature: config-file rewriting shim for legacy apps
     """
     hello: <<app1.database.host>>
     """
-    When I run the shim with argv "--dir=real_config"
+    When I run the shim with argv "--rewrite=real_config"
     Then the shim should succeed
     And "config/untouched.yml" should look like:
     """
