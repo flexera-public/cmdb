@@ -1,27 +1,56 @@
-### 3.0.0rc1 (Unreleased)
+### 3.0.0rc1
 
-With this major version we introduce significant compatibility-breaking changes! Functions
-and options have been removed and we have rethought how sources are specified. Rather than
-have a hodgepodge of CLI options for each type of source, all sources are represented by
-URLs where the scheme tells the gem what type of source to create: `env:`, `file://`, or
-`consul://`.
+With this major version we introduce significant compatibility-breaking changes!
+Functions and options have been removed and we have rethought how sources are
+specified.
 
-The gem no longer scans fixed directories for JSON/YML files on startup; you must explicitly
-provide all sources when you call `CMDB::Interface.new`. If you provide no sources then
-a single `env:` source will be used as the default -- which is fairly useless, since the
-best most common use case is to take data _from_ other sources and put it _into_ the
-environment.
+#### New: Interactive shell
+
+A `shell` subcommand allows you to navigate the CMDB as if it were a
+filesystem with `ls`, `cd` and other commands.
+
+#### New: Read/write sources
+
+Non-file sources allow keys to be written as well as read. You can set the values
+of keys from the shell, or programatically by calling the `#set` method of the
+source.
+
+#### Changed: Command-line interface
+
+The `cmdb` command now supports a number of common options that apply to all
+subcommands.
+
+Rather than have a hodgepodge of CLI options for each type of source, all sources 
+are represented by URLs where the scheme tells the gem what type of source to 
+create: `env:`, `file://`, or `consul://`. You can specify as many sources as
+you'd like by passing `--source` option multiple times with different URLs.
+
+If you omit `--source` entirely, the CLI will scan the network for common
+locations of supported sources. If it finds nothing, it will exit with an
+error.
+ 
+#### Changed: data file locations
+
+The gem no longer scans fixed directories for JSON/YML files on startup; you 
+must explicitly provide the locations of every file that has CMDB keys by
+passing the `--source` option.
+
+### Changed: shim command
+
+The `--dir` option has been renamed to `--rewrite` for clarity.
+
+The `--reload` and --reload-signal` options are no longer supported; CMDB has
+lost its ability to reload the app when your files change. As a result, we
+no longer depend on the `listen` gem.
 
 The option to specify a `--root` for the CMDB interface as a whole has been 
 removed.
-
-An interactive shell command has been added that allows you to navigate the
-CMDB as if it were a filesystem with `ls`, `cd` and other commands. You can also
-set values with some sources, either from the shell or programatically by calling
-the `#set` method of the source.
+#### Implementation changes
 
 The dependency on Diplomat has been removed; we now speak to consul without a
 middleman.
+
+#### Design changes
 
 All sources have a new common base class `Source`, which also serves as an
 enclosing namespace for all derived classes (`Source::Consul`, 

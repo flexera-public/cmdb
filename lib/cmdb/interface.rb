@@ -75,7 +75,7 @@ module CMDB
     end
 
     def search(prefix)
-      prefix = Regexp.new('^' + Regexp.escape(key_to_env(prefix)))
+      prefix = Regexp.new('^' + Regexp.escape(prefix))
       result = {}
 
       @sources.each do |s|

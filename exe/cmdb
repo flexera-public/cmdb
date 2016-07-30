@@ -20,37 +20,64 @@ CMDB::Commands.constants.each do |konst|
   commands[name] = CMDB::Commands.const_get(konst.to_sym)
 end
 
-# Use a Trollop parser for help/banner display, but do not actually parse
-# anything just yet.
 command_list = commands.keys - ['help']
 command_info = command_list.map { |c| "       * #{c}" }.join("\n")
+
+# Use a Trollop parser for help/banner display, but do not actually parse
+# anything just yet.
 p = Trollop::Parser.new do
   version "cmdb #{gemspec_version} (c) 2013-2014 RightScale, Inc."
   banner <<-EOS
 A command-line interface for configuration management.
 
 Usage:
-       cmdb <command> [options]
+       cmdb [options] <command> [command-options]
 
 Where <command> is one of:
 #{command_info}
 
-To get help on a command:
-       cmdb help command
+To get help on a specific command and its options:
+       cmdb help <command>
+
+Common options that apply to all commands:
   EOS
+
+  opt :source,
+      "Source of CMDB inputs e.g. file:///foo.yml or consul://localhost",
+      type: :string,
+      multi: true
+
+  opt :quiet,
+      "Suppress unnecessary output",
+      default: false
 
   stop_on commands.keys
 end
 
 Trollop.with_standard_exception_handling p do
   raise Trollop::HelpNeeded if ARGV.empty?
-  p.parse ARGV
+
+  # Apply global options
+  options = p.parse ARGV
+  CMDB.log.level = Logger::FATAL if options[:quiet]
+
+  if options[:source].empty?
+    sources = CMDB::Source.detect
+  else
+    sources = options[:source].map do |source|
+      CMDB::Source.create(source)
+    end
+  end
+
+  interface = CMDB::Interface.new(*sources)
+
+  # Identify the subcommand and run it (or print help).
+  raise Trollop::HelpNeeded if ARGV.empty?
   cmd = ARGV.shift
   klass = commands[cmd]
-
   if klass
-    klass.create.run
+    klass.create(interface).run
   else
-    raise(ArgumentError, "Unrecognized command #{cmd}")
+    CMDB.log.fatal "Unrecognized command '#{cmd}'; try 'cmdb --help'"
   end
 end

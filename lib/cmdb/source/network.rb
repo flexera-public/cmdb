@@ -36,7 +36,7 @@ module CMDB
     #
     # @param [String] path
     # @param [String,Hash,Array,Numeric,Boolean] entity
-    # @return [Integer,String]
+    # @return [Integer,String] the response entity for responses with 2xx status; the status code for responses with any other status
     def http_put(path, entity)
       entity = JSON.dump(entity) unless entity.is_a?(String)
 
@@ -48,7 +48,7 @@ module CMDB
       request.body = entity
       response = @http.request request
       case response.code.to_i
-      when 200.299
+      when 200..299
         entity
       else
         response.code.to_i

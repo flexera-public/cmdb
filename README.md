@@ -3,17 +3,12 @@
 [![TravisCI][travis_ci_img]](https://travis-ci.org/rightscale/cmdb)
 [travis_ci_img]: https://travis-ci.org/rightscale/cmdb.svg?branch=master
 
-*NOTE:* this gem is under heavy development and it is likely that v3 will contain several interface-breaking
-changes and simplifications. We encourage you to play with our toys and give us feedback on how you would
-like to see the project evolve, but if you use this gem for production-grade software, please make sure to
-pin to version `~> 2.6` in your Gemfile to avoid breakage!
-
 CMDB is a Ruby interface for consuming data from one or more configuration management databases
 (CMDBs) and making that information available to Web applications.
 
 It is intended to support multiple CM technologies, including:
-  - JSON/YAML files on a local disk
   - consul
+  - JSON/YAML files on a local disk
   - (someday) etcd
   - (someday) ZooKeeper
 
@@ -39,26 +34,33 @@ The gem has two primary interfaces:
 
 # Getting Started
 
-## Create CMDB Data Files
+## Determine CMDB sources
 
-The shim looks in two locations to find data files. In order of precedence:
+Sources are specified with the `--source` option when you run the CLI. You
+can add as many sources as you'd like. All sources are specified as a URI,
+where the scheme tells CMDB which driver to use and the other parts of the
+URL determine how to locate the source.
 
-  1. `/var/lib/cmdb` -- typically at deployment time
-  2. `~/.cmdb` -- useful for developers when testing the app
+The URI's fragment, if provided, specifies the common prefix for all keys
+defined by that source. With no fragment, CMDB guesses a suitable prefix
+based on the URL's path. To specify _no_ prefix, use the empty fragment.
 
-The base name (minus extension) of each file is important; it determines the top-level name of
-the keys in that file and it *must be unique* across all of the directories. For instance,
-`my_app.json` defines CMDB keys in the `my_app.*` hierarchy.
+Examples:
 
-Create a data file in one of these directories; for example, you might create `my_app.yml` with
-the following contents:
+  * `file:///var/lib/cmdb/myapp.yml` creates a file source with the prefix `myapp.`
+  * `file:///var/lib/cmdb/common.yml#` creates a file source with no prefix
+  * `consul://localhost` creates a source with no key prefix that talks to a local
+    consul agent on the standard port (8500)
+  * `consul://kv:18500#myapp` creates a source with the prefix `myapp.` that
+    talks to a remote consul agent on a nonstandard port (18500)
+  * `consul://localhost/mycorp/staging/myapp` creates a source with the prefix
+    `myapp.` that has only keys that pertain to myapp. 
+  * `consul://localhost/mycorp/staging#` creates a source with an empty
+    prefix that has all keys in the staging environment
 
-    db:
-      hostname: db1.local
-    widgets:
-      flavors:
-        - vanilla
-        - chocolate
+To learn more about sources and prefixes, see "Data model," below.
+
+## Invoke the CMDB Shell
 
 ## Invoke the CMDB Shim
 
@@ -84,10 +86,10 @@ Note that the data type of CMDB inputs is preserved: lists remain lists, numbers
 and so forth. This works irrespective of the format of your configuration files, and also holds true
 for CMDB values that are serialized to the environment (as a JSON document, in the case of lists).
 
-### Rewriting configuration files with CMDB values
+### Rewrite static configuration files with dynamic CMDB values
 
-If the `--dir` option is provided, the shim recursively scans your working
-directory (`Dir.pwd`) for data files that contain replacement tokens; when a token is
+If the `--rewrite` option is provided, the shim recursively scans the provided
+subdirectory for data files that contain replacement tokens; when a token is
 found, it substitutes the corresponding CMDB key's value.
 
 Replacement tokens look like this: `<<name.of.my.key>>` and can appear anywhere in a file as a YAML
@@ -99,10 +101,6 @@ invalidate syntax or render the files unparsable by other tools.
 The shim performs replacement in-memory and saves all of the edits at once, making the rewrite
 operation nearly atomic. If any keys are missing, then no files are changed on disk and the shim
 exits with a helpful error message.
-
-*NOTE:* the shim does not perform rewriting in development mode; the expectation is that your app's
-configuration files will already provide reasonable dev-mode defaults and that rewriting them
-is not necessary.
 
 Given `my_app.yml` and an application with two configuration files:
 
@@ -135,33 +133,6 @@ If your app doesn't know how to safely switch to a non-privileged user, the shim
 can do this for you. Just add the `--user` flag when you invoke it:
 
     bundle exec cmdb shim --user=www-data whoami
-
-### Reload the App When Code Changes
-
-You can pass the `--reload=key.name` option to `cmdb shim` in order to enable filesystem
-watching. The shim will signal your application server whenever files are created,
-updated or deleted, generally causing a graceful restart of the server process.
-
-Needless to say, your app server must support graceful restart upon receipt of
-a certain signal! The CMDB gem uses SIGHUP by default, but you can override this
-with --reload-signal=SIGWHATEVER.
-
-The parameter names a CMDB key (such as `key.name`) whose value determines whether filesystem
-watching is enabled. It *should* be a boolean, but *may* be nil or any "truthy" value such as a
-number or string. If the key is truthy, then the shim will perform filesystem-watching.
-
-## Query the CMDB Directly
-
-Ruby applications can access the CMDB as a Ruby proxy object:
-
-    # Ready to use; no bootstrapping required.
-    require 'cmdb'
-
-    cmdb = CMDB::Interface.new
-    cmdb.get('my_app.my_setting')
-    cmdb.get('my_app.some_other_setting')
-
-This allows you to read CMDB values from the directly from your code.
 
 # Data Model
 

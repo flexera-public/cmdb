@@ -11,7 +11,5 @@ services:
     networks:
       default:
         ipv4_address: 172.28.0.2
-  cmdb:
-    build: .
-    depends_on:
-      - consul
+    ports:
+      - "8500"

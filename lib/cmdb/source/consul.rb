@@ -34,13 +34,14 @@ module CMDB
     # Iterate through all keys in this source.
     # @return [Integer] number of key/value pairs that were yielded
     def each_pair(&_block)
-      all = http_get path_to('/'), query:'recurse'
+      path = path_to('/')
+      all = http_get path, query:'recurse'
       unless all.is_a?(Array)
-        raise CMDB:Error.new("Unexpected consul response #{all.inspect}")
+        raise CMDB::Error.new("Unexpected consul response to 'GET #{path}': #{all.inspect}")
       end
 
       all.each do |item|
-        dotted_prefix = @prefix.split('/').join('.')
+        dotted_prefix = (@preix && @prefix.split('/').join('.')) || ''
         dotted_key = item['Key'].split('/').join('.')
         key = dotted_prefix == '' ? dotted_key : dotted_key.split("#{dotted_prefix}.").last
         value = load_value(Base64.decode64(item['Value']))
@@ -56,8 +57,8 @@ module CMDB
     # kv, including any prefix that was specified at startup.
     def path_to(subkey)
       p = '/v1/kv/'
-      (p << prefix << '/') unless prefix.empty?
-      p << subkey
+      (p << prefix << '/') unless prefix.nil?
+      p << subkey unless (subkey == '/' && p[-1] == '/')
       p
     end
   end

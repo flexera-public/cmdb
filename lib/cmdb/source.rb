@@ -13,6 +13,11 @@ module CMDB
 
     # Construct a source given a URI that identifies both the type of
     # source (consul, file or environment) and its location if applicable.
+    # Choose a suitable prefix for the source based on the URI contents.
+    #
+    # If you pass a fragment as part of the URI, then the fragment becomes the
+    # prefix. Otherwise, the final path component becomes the prefix, unless
+    # it is empty in which case the first hostname component becomes the prefix.
     #
     # @param [String,URI] location of source
     #
@@ -27,16 +32,27 @@ module CMDB
     # @example YAML source
     #   CMDB::Source.create('file://awesome.yml')
     #
-    # @example consul source with no prefix
-    #   CMDB::Source.create('consul://localhost')
+    # @example consul source at the root of the k/v tree with prefix "otherhost" (probably not desirable!)
+    #   CMDB::Source.create('consul://otherhost.example.com')
     #
-    # @example consul source with nonstandard location and port
+    # @example consul source at the root of the k/v tree with prefix "myapp"
+    #   CMDB::Source.create('consul://otherhost.example.com#myapp')
+    #
+    # @example consul source whose keys are drawn from a subtree of the k/v with prefix "interesting."
+    #   CMDB::Source.create('consul://localhost/interesting')
+    #
+    # @example consul source with nonstandard location and port and prefix "my-kv"
     #   CMDB::Source.create('consul://my-kv:18500')
-    #
-    # @example consul source whose keys are drawn from a subtree of the k/v
-    #   CMDB::Source.create('consul://localhost/interesting-keys')
     def self.create(uri)
       uri = URI.parse(uri) if uri.is_a?(String)
+
+      if !uri.fragment.nil? && !uri.fragment.empty?
+        prefix = uri.fragment
+      elsif !uri.path.nil? && !uri.path.empty?
+        prefix = ::File.basename(uri.path)
+      else
+        prefix = nil
+      end
 
       case uri.scheme
       when 'consul'
@@ -44,7 +60,7 @@ module CMDB
         curi.scheme = 'http'
         curi.port ||= 8500
         curi.path = ''
-        Source::Consul.new(URI.parse(curi.to_s))
+        Source::Consul.new(URI.parse(curi.to_s), prefix)
       when 'file'
         Source::File.new(uri.path)
       when 'env'
@@ -52,6 +68,13 @@ module CMDB
       else
         raise ArgumentError, "Unrecognized URL scheme '#{uri.scheme}'"
       end
+    end
+
+    # Test for the presence of some default sources and return any that exist.
+    #
+    # @return [Array] a set of initialized CMDB sources
+    def self.detect
+      raise NotImplementedError, "Please specify a --source for now"
     end
 
     private

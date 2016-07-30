@@ -1,4 +1,5 @@
 # encoding: utf-8
+require 'logger'
 require 'set'
 require 'singleton'
 
@@ -69,6 +70,10 @@ module CMDB
     end
   end
 
+  # Client asked to do something that does not make sense.
+  class BadCommand < Error
+  end
+
   # Two or more sources contain keys for the same namespace; this is only allowed in development
   # environments.
   class ValueConflict < Error
@@ -117,6 +122,11 @@ module CMDB
   def log
     unless @log
       @log = Logger.new(STDOUT)
+
+      @log.formatter = Proc.new do |severity, datetime, progname, msg|
+        "#{severity}: #{msg}\n"
+      end
+
       @log.level = Logger::WARN
     end
 

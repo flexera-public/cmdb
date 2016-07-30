@@ -1,52 +1,34 @@
 # encoding: utf-8
-require 'logger'
-require 'listen'
 require 'pp'
 
 module CMDB::Commands
   class Shell
-    def self.create
+    def self.create(interface)
       options = Trollop.options do
         banner <<-EOS
-The 'shell' command enters a customized IRB shell where you can interact with
+The 'shell' command enters a Unix-like shell where you can interact with
 CMDB sources and inspect the value of keys.
 
 Usage:
-cmdb shell [options]
-
-Where [options] are selected from:
+cmdb shell
         EOS
-        opt :consul_url,
-            'The URL for talking to consul',
-            type: :string
-        opt :consul_prefix,
-            'The prefix to use when getting keys from consul, can be specified more than once',
-            type: :string,
-            multi: true
-        opt :keys,
-            'Override search path(s) for CMDB key files',
-            type: :strings
       end
 
-      new(options)
+      new(interface)
     end
 
     # @return [CMDB::Interface]
     attr_reader :cmdb
 
-    def initialize(options)
-      @consul_url      = options[:consul_url]
-      @consul_prefixes = options[:consul_prefix]
-      @keys            = options[:keys] || []
-
-      CMDB.log.level = Logger::FATAL if options[:quiet]
+    # @param [CMDB::Interface] interface
+    def initialize(interface)
+      @cmdb = interface
     end
 
     # Run the shim.
     #
     # @raise [SystemExit] if something goes wrong
     def run
-      @cmdb = CMDB::Interface.new
       @self = Self.new(cmdb)
       repl
     end
@@ -66,7 +48,7 @@ Where [options] are selected from:
           words = line.split(/\s+/)
           command, args = words.first.to_sym, words[1..-1]
           run_ruby(command, args) || run_getter(line) || run_setter(line) ||
-            fail(NoMethodError.new('command not found', command))
+            fail(CMDB::BadCommand.new('command not found', command))
         rescue => e
           handle_error(e) || raise
         end
@@ -112,7 +94,7 @@ Where [options] are selected from:
     # @return [Boolean] print message and return true if error is handled; else return false
     def handle_error(e)
       case e
-      when NoMethodError
+      when CMDB::BadCommand
         puts "cmdb: Unrecognized command '#{e.name}'"
         true
       when ArgumentError then puts "cmdb: Too many/few arguments"
