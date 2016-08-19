@@ -9,11 +9,14 @@ module CMDB
 
     private
 
-    # Perform a GET. On 2xx, parse response body as JSON and return 2xx.
+    # Perform a GET. On 2xx, attempt to parse response body as JSON if it
+    # looks like a JSON document, else return raw response body as String.
+    #
     # On 3xx, 4xx, 5xx, return an Integer status code.
     #
     # @param [String] path
     # @return [Integer,Hash]
+    # @raise [JSON::ParserError] if response is malformed or invalid JSON
     def http_get(path, query:nil)
       @http ||= Net::HTTP.start(@uri.host, @uri.port)
       uri = @uri.dup
@@ -24,7 +27,11 @@ module CMDB
       response = @http.request request
       case response.code.to_i
       when 200..299
-        return JSON.parse(response.body)
+        if response.body =~ /^[\[\{]/
+          return JSON.parse(response.body)
+        else
+          return response.body
+        end
       else
         return response.code.to_i
       end

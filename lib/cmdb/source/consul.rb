@@ -51,6 +51,15 @@ module CMDB
       all.size
     end
 
+    # Test connectivity to consul agent.
+    #
+    # @return [Boolean]
+    def ping
+      http_get('/') == 'Consul Agent'
+    rescue
+      false
+    end
+
     private
 
     # Given a key's relative path, return its absolute REST path in the consul

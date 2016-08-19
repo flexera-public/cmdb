@@ -136,84 +136,53 @@ can do this for you. Just add the `--user` flag when you invoke it:
 
     bundle exec cmdb shim --user=www-data whoami
 
+# Data Sources
+
+## Network Servers
+
+To read CMDB data from a consul server, add a CLI parameter such as
+`--source=consul://some-host/key/subkey`. This will create a source whose
+prefix is `subkey` that encompasses the  subtree of the k/v store that lies
+underneath `/key/subkey`.
+
+## Flat Files
+
+To read CMDB data from a flat file on disk, add a CLI parameter such as
+`--source=file:///var/lib/cmdb/mykeys.yml`. This will parse the YAML file
+located in `/var/lib/cmdb` and present it as a source whose prefix is `mykeys`.
+
+JSON and YAML files are both supported. The structured data within each file
+can contain arbitrarily-deep subtrees which are interpreted as subkeys,
+sub-subkeys and so forth.
+
 # Data Model
 
-This library models all CMDBs as hierarchical key/value stores whose leaf nodes can be strings,
-numbers, or arrays of like-typed objects. This model is a "least common denominator" simplification
-of the data models of YML, JSON, ZooKeeper and etcd, allowing all of those technologies to be
-treated as interchangeable sources of configuration information.
+This library models all data sources as hierarchical key/value stores whose leaf
+nodes can be strings, numbers, booleans, or lists; maps are not allowed.
 
-CMDB key names consist of a dot-separated string e.g. `my_app.category_of_settings.some_value`. The
-value of a CMDB key can be a string, boolean, number, nil, or a list of any of those types.
+This model is a "least common denominator" simplification of the data models of
+YML, JSON, ZooKeeper and etcd; by disallowing maps as the values of keys, it
+avoids ambiguity over whether a map should be treated as a subtree or as a
+distinct value.
 
-CMDB keys *cannot* contain maps/hashes, nor can lists contain differently-typed data.
+## Source Prefixes
 
-When a CMDB key is accessed through the Ruby API or referenced with a file-rewrite <<token>>, its
-name always begins with the file or path name of its *source* (JSON file, consul path, etc).
+Some CMDB sources have a `prefix`, indicating that _all_ keys contained in
+that source begin with the same prefix. No two sources may share a prefix,
+ensuring that sources don't "hide" each others' data. The prefix of a source is
+usually automatically determined by the final component of its URL, e.g. the
+filename in the case of `file://` sources and the final path component in the
+case of `consul://` or other network sources.
 
-When a CMDB key is written into the process environment or accessed via `Source#to_h`, its name
-is "bare" and the source name is irrelevant.
+## Inheritance
 
-If we use a `--consul-prefix` of `/kv/rightscale/intregration/shard403/common`
-then a key names would look like `common.debug.enabled` and environment names
-would look like `DEBUG_ENABLED`. The same is true if we load a `common.json`
-file source from `/var/lib/cmdb`.
+The uniqueness constraint on prefixes means that all sources' keys are
+disjoint; there is no such thing as "inheritance" in the CMDB data model.
+You are free to create sources that have _no_ prefix, which permits overlap
+and therefore inheritance between sources, but this contradicts the design
+goals of CMDB and is strongly discouraged. 
 
-A future version of cmdb will harmonize the treatment of names; the prefix
-will be insignificant to the key name and keys will look like environment
-variables.
-
-## Network Data Sources
-
-To read from a consul server, pass `--consul-url` with a consul server address
-and `--consul-prefix` one or more times with a top-level path to treat as a
-named source.
-
-## Disk-Based Data Sources
-
-When the CMDB interface is initialized, it searches two directories for YAML files:
- - /var/lib/cmdb
- - ~/.cmdb
-
-YAML files in these directories are assumed to contain CMDB values and loaded into memory in the
-order they are encountered. The hierarchy of the YAML keys is flattened in order to derive
-dot-separated key names. Consider the following YAML file:
-
-    # beverages.yml
-    coffee:
-      - latte
-      - cappucino
-      - mocha
-      - macchiato
-    tea:
-      - chai
-      - herbal
-      - black
-    to_go: true
-
-This defines three CMDB values: `beverages.coffee` (a list of four items), `beverages.tea`
-(a list of three items), and `beverages.to_go` (a boolean).
-
-### Key Namespaces
-
-The name of a CMDB file is important; it defines a namespace for all of the variables contained
-inside. No two files may share a name; therefore, no two CMDB keys can have the same name.
-Likewise, all keys with a given prefix are guaranteed to come from the same source.
-
-### Overlapping Namespaces
-
-Because CMDB files can come from several directories, it's possible for two same-named data files
-to define values in the same namespace. In this case, the behavior of RightService varies depending
-on the value of RACK_ENV or RAILS_ENV:
-
-  - unset, development or test: CMDB chooses the highest-precedence file and ignores the others
-    after printing a warning. Files in `/etc` win over files in `$HOME`, which win over
-    files in the working directory.
-
-  - any other environment: CMDB fails with an error message that describes the problem and
-    the locations of the overlapping files.
-
-### Ambiguous Key Names
+## Ambiguous Key Names
 
 Consider a file that defines the following variables:
 

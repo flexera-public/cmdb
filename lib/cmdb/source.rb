@@ -1,7 +1,8 @@
 module CMDB
   class Source
     # Determine the prefix of all keys provided by this source. No two sources can share
-    # a prefix, and no source's prefix can be a prefix of any other's.
+    # a prefix (other than nil) and no source's prefix can be a prefix of any other
+    # source's prefix.
     #
     # Some sources have no common prefix, in which case this reader returns nil.
     #
@@ -72,7 +73,12 @@ module CMDB
     #
     # @return [Array] a set of initialized CMDB sources
     def self.detect
-      raise NotImplementedError, "Please specify a --source for now"
+      sources = []
+
+      consul = create('consul://localhost')
+      sources << consul if consul.ping
+
+      sources
     end
 
     private
