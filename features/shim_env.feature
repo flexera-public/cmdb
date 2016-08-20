@@ -35,11 +35,11 @@ Feature: env-populating shim for 12-factor apps
       music: hip hop
     """
     When I run the shim with argv "--env env"
-    Then the shim should fail
+    Then the command should fail
     And the output should include "CMDB: Name Conflict: FAVORITE_MUSIC corresponds to 2 different keys"
 
   Scenario: conflict with existing ENV keys
     Given $FAVORITE_MUSIC is "rock & roll"
     When I run the shim with argv "--env env"
-    Then the shim should fail
+    Then the command should fail
     And the output should include "CMDB: Environment Conflict: FAVORITE_MUSIC is already present in the environment; cannot override with CMDB values"

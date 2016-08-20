@@ -124,18 +124,19 @@ After do |scenario|
 
     begin
       Process.kill('QUIT', @shim_command.pid)
-      @shim_command.join
     rescue
       Cucumber.logger.debug("shim is already dead (#{$ERROR_INFO})\n")
     end
 
-    if scenario.failed?
+    @shim_command.join
+
+    # if scenario.failed?
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
       text = @shim_command.captured_output + @shim_command.captured_error
       text.split(/[\n\r]+/).each do |line|
         Cucumber.logger.debug("!!! #{line}\n")
       end
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-    end
+    # end
   end
 end

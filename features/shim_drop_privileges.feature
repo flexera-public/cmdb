@@ -7,11 +7,11 @@ Feature: shim drop privileges using setuid
     Given RACK_ENV is "production"
 
   Scenario: run normally
-    When I run the shim without "--user"
-    Then the shim should not setuid
-    And the shim should succeed
+    When I Commands::Shim without "user:"
+    Then the command should not setuid
+    And the command should succeed
 
   Scenario: run as www-data
-    When I run the shim with "--user=www-data"
-    Then the shim should setuid to "www-data"
-    And the shim should succeed
+    When I run Commands::Shim with "user:www-data"
+    Then the command should setuid to "www-data"
+    And the command should succeed

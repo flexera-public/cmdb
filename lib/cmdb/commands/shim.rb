@@ -40,6 +40,7 @@ Where [options] are selected from:
       end
       options.delete(:help)
 
+      options.delete_if { |k, v| k.to_s =~ /_given$/i }
       new(interface, ARGV, **options)
     end
 
@@ -62,7 +63,6 @@ Where [options] are selected from:
 
     # Create a Shim.
     # @param [Array] command collection of string to pass to Kernel#exec; 0th element is the command name
-    # @options [String] :condif_dir
     def initialize(interface, command, rewrite:, pretend:, env:, user:)
       @cmdb            = interface
       @command         = command

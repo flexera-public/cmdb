@@ -8,14 +8,14 @@ Feature: shim CLI validation
 
   Scenario: complain with no dir, env or command
     When I run the shim with argv ""
-    Then the shim should fail
+    Then the command should fail
     Then the output should include "nothing to do"
 
   Scenario: succeed with pretend
     When I run the shim with argv "--rewrite=. --pretend"
-    Then the shim should succeed
+    Then the command should succeed
 
   Scenario: succeed with just a command
     When I run the shim with argv "-- bash -c 'echo hello cucumber'"
-    Then the shim should succeed
+    Then the command should succeed
     Then the output should include "hello cucumber"

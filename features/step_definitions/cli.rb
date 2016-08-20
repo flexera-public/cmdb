@@ -13,10 +13,12 @@ Given /^\$([A-Z0-9_]+) is "(.*)"$/ do |key, value|
   app_env[key] = value
 end
 
-# Run the shim as a subprocess with the specified options
-When(/^I run the shim with argv "(.*)"$/) do |options|
+# Run cmdb as a subprocess with the specified options
+When(/^I run cmdb with "(.*)"$/) do |options|
   script = File.expand_path('../../../exe/cmdb', __FILE__)
-  cmd = "bundle exec #{script} shim #{options}"
+
+  sfl = sources.map { |s| "--source=#{s}" }.join ' '
+  cmd = "bundle exec #{script} #{sfl} #{options}"
 
   Cucumber.logger.debug("bash> #{cmd}\n")
   Bundler.with_clean_env do
@@ -36,29 +38,29 @@ Then(/^"(.*)" should look like:$/) do |filename, content|
   parsed_file = YAML.load(file)
   parsed_content = YAML.load(content)
 
-  parsed_file.should == parsed_content
+  expect(parsed_file).to == parsed_content
 end
 
-Then /^the shim should (succeed|fail)$/ do |pass_fail|
-  # wait for shim to exit if it was run as a subprocess
+Then /^the command should (succeed|fail)$/ do |pass_fail|
+  # wait for cmdb to exit if it was run as a subprocess
   if @shim_command && @shim_command.status.nil?
     @shim_command.join
     @shim_exitstatus = @shim_command.status.exitstatus
   end
 
   if pass_fail == 'succeed'
-    @shim_exitstatus.should eq(0)
+    expect(@shim_exitstatus).to eq(0)
   else
-    @shim_exitstatus.should_not eq(0)
+    expect(@shim_exitstatus).not_to eq(0)
   end
 end
 
-Then /^the shim exitstatus should be ([0-9]+)$/ do |status|
-  @shim_command.pid.should be_a(Integer)
+Then /^the exitstatus should be ([0-9]+)$/ do |status|
+  expect(@shim_command.pid).to be_a(Integer)
   @shim_command.join
   @shim_exitstatus = @shim_command.status.exitstatus
 
-  @shim_exitstatus.should eq(Integer(status))
+  expect(@shim_exitstatus).to eq(Integer(status))
 end
 
 And /^the output should (not )?include "(.*)"$/ do |negatory, message|
@@ -69,14 +71,14 @@ And /^the output should (not )?include "(.*)"$/ do |negatory, message|
   else
     # Shim was run in-process; make sure test rigging initialized captured
     # its output
-    @shim_output.should_not be_nil
+    expect(@shim_output).not_to be_nil
     @shim_output = @shim_output.string if @shim_output.is_a?(StringIO)
   end
 
   if negatory
-    @shim_output.should_not include(message)
+    expect(@shim_output).not_to include(message)
   else
-    @shim_output.should include(message)
+    expect(@shim_output).to include(message)
   end
 end
 
@@ -88,7 +90,7 @@ And /^the output should have keys: (.*)$/ do |kvs|
   else
     # Shim was run in-process; make sure test rigging initialized captured
     # its output
-    @shim_output.should_not be_nil
+    expect(@shim_output).not_to be_nil
     @shim_output = @shim_output.string if @shim_output.is_a?(StringIO)
   end
 
@@ -99,5 +101,5 @@ And /^the output should have keys: (.*)$/ do |kvs|
   kvs.each do |k, v|
     mismatched << k unless @shim_output.include?(k + '=' + v)
   end
-  mismatched.should be_empty
+  expect(mismatched).to be_empty
 end

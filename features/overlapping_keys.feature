@@ -15,5 +15,6 @@ Feature: file sources with potentially overlapping keys
     {"alas": "friends"}
     """
     And RACK_ENV is "production"
-    When I run the shim with argv "--rewrite=."
-    Then the shim should fail
+    When I run cmdb with "shim --rewrite=."
+    Then the command should fail
+    And the output should include "overlapping sources"
