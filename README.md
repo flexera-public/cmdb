@@ -21,25 +21,31 @@ CMDB supports two primary use cases:
 
   1. Decouple your modern (12-factor) application from the CM mechanism that is used to deploy it,
      transforming CMDB keys and values into the enviroment variables that your app expects.
-  2. Help you deploy your "legacy" application that expects its configuration to be written to
-     disk files, rewriting those files with data taken from the CMDB.
+  2. Deploy legacy applications that expect their configuration to be
+     written to disk files by rewriting files at app-load time, substituting
+     CMDB variables into the files as required.
 
-The gem has two primary interfaces:
-- The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
-  config files, then spawns your application. It can also be told to watch the filesystem for changes and
-  send a signal e.g. `SIGHUP` to your application, bringing reload-on-edit functionality to any app.
-- The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_h`
-  method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
-  environment yourself, without using the shim.
+The gem has three primary interfaces:
+
+  1. The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
+     config files, then spawns your application.
+  2. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_h`
+     method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
+     environment yourself, without using the shim.
+  3. The `cmdb shell` command navigates your k/v store using filesystem-like
+  metaphors (`ls`, `cd`, and so forth)   
 
 # Getting Started
 
-## Determine CMDB sources
+## Determine sources
 
-Sources are specified with the `--source` option when you run the CLI. You
-can add as many sources as you'd like. All sources are specified as a URI,
-where the scheme tells CMDB which driver to use and the other parts of the
-URL determine how to locate the source.
+Sources are specified with the `--source` option when you run the CLI. This
+option applies to all subcommands (`shim`, `shell`, etc) and must appear
+before the subcommand.
+
+You can add as many sources as you'd like. All sources are specified as a URI,
+where the scheme tells CMDB which driver to use and how to interpret the rest
+of the URI.
 
 Sources can optionally have a "prefix" which is used as a common prefix of all
 key names under the source. When CMDB can identify the prefix for your source,
@@ -60,9 +66,14 @@ Examples:
     that has all keys in the staging environment. (It is probably a bad idea to
     use this source with the `myapp` source in the example above!)
 
+If no sources are specified on the command line, CMDB will run an auto-detect
+algorithm to check for network agents listening at localhost. 
+
 To learn more about sources and prefixes, see "Data model," below.
 
 ## Invoke the CMDB Shell
+
+To enter an interactive sh-like shell, just type `cmdb shell`. 
 
 ## Invoke the CMDB Shim
 
