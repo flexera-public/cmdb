@@ -20,7 +20,7 @@ module CMDB
       when String
         response = json_parse(response)
         item = response.first
-        json_parse(Base64.decode64(item['Value']))
+        item['Value'] && json_parse(Base64.decode64(item['Value']))
       when 404
         nil
       else
@@ -60,6 +60,7 @@ module CMDB
 
       result.each do |item|
         key = slash_to_dot(item['Key'])
+        next unless item['Value']
         value = json_parse(Base64.decode64(item['Value']))
         yield(key, value)
       end

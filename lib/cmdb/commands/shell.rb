@@ -114,7 +114,7 @@ cmdb shell
     def run_ruby(command, args)
       self._ = @dsl.__send__(command, *args)
       true
-    rescue NoMethodError
+    rescue CMDB::BadCommand
       false
     rescue ArgumentError => e
       raise CMDB::BadCommand.new(e.message, command)

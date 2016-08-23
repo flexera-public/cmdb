@@ -10,6 +10,10 @@ module CMDB::Shell
       @out = out
     end
 
+    def method_missing(meth, *args)
+      raise ::CMDB::BadCommand.new(meth)
+    end
+
     def ls(path='')
       prefix = @shell.expand_path(path)
       @cmdb.search prefix
