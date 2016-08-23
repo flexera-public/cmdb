@@ -24,7 +24,7 @@ module CMDB
       when 404
         nil
       else
-        raise CMDB:Error.new("Unexpected consul response #{response.inspect}")
+        raise CMDB::Error.new("Unexpected consul response #{response.inspect}")
       end
     end
 
