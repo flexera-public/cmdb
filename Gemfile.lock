@@ -27,7 +27,7 @@ GEM
       gherkin (~> 3.2.0)
     cucumber-wire (0.0.1)
     diff-lcs (1.2.5)
-    docker-compose (1.0.0rc1)
+    docker-compose (1.0.0rc2)
       backticks (>= 1.0.0rc1)
     gherkin (3.2.0)
     hashdiff (0.3.0)
@@ -84,7 +84,7 @@ DEPENDENCIES
   bundler (~> 1.10)
   cmdb!
   cucumber
-  docker-compose (= 1.0.0rc1)
+  docker-compose (= 1.0.0rc2)
   pry
   pry-byebug
   rake

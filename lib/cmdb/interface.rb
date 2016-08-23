@@ -49,7 +49,10 @@ module CMDB
     # Set the value of a CMDB key.
     #
     # @return [Source,ni] the source that accepted the write, if any
+    # @raise [BadKey] if the key name is malformed
     def set(key, value)
+      raise BadKey.new(key) unless key =~ VALID_KEY
+
       @sources.reverse.each do |s|
         if s.respond_to?(:set)
           s.set(key, value)

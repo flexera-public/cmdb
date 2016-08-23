@@ -53,14 +53,14 @@ module CMDB
     # @yieldparam [Object] value
     def each_pair(&_block)
       # Strip the prefix in the key and call the block
-      @data.each_pair { |k, v| yield(k.split("#{@prefix}.").last, v) }
+      @data.each_pair { |k, v| yield(k.sub("#{@prefix}#{CMDB::SEPARATOR}", ''), v) }
     end
 
     private
 
     def flatten(data, prefix, output)
       data.each_pair do |key, value|
-        key = "#{prefix}.#{key}"
+        key = "#{prefix}#{CMDB::SEPARATOR}#{key}"
         case value
         when Hash
           flatten(value, key, output)

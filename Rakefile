@@ -22,7 +22,6 @@ desc 'Create Consul source using Docker Compose and invoke cmdb shell'
 task :sandbox do
   compose = Docker::Compose::Session.new
   compose.up 'consul', detached:true
-
   mapper = Docker::Compose::Mapper.new(compose)
   url = mapper.map('consul://consul:8500')
 

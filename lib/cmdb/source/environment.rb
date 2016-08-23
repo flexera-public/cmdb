@@ -5,6 +5,8 @@ module CMDB
   # Data source that is backed by the process environment. Keys are natively
   # represented as UPPER_CASE_UNDERSCORE and all dotted keys are coerced to
   # native form before get/set.
+  #
+  # Environment sources never have a prefix.
   class Source::Environment
     # @return [String] the empty string
     def prefix
@@ -46,8 +48,8 @@ module CMDB
     # @example
     #   "common.proxy.endpoints" => COMMON_PROXY_ENDPOINTS
     def dot_to_env(key)
-      key = "#{@prefix}.#{key}" unless @prefix.nil?
-      key.split('.').map { |e| e.upcase }.join('_')
+      key = "#{@prefix}#{CMDB::SEPARATOR}#{key}" unless @prefix.nil?
+      key.split(CMDB::SEPARATOR).map { |e| e.upcase }.join('_')
     end
   end
 end

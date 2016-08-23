@@ -80,16 +80,6 @@ module CMDB
 
       sources
     end
-
-    private
-
-    # Lazily parse a value, which may be valid JSON or may be a bare string.
-    def load_value(val)
-      JSON.load(val)
-    rescue JSON::ParserError
-      val
-    end
-
   end
 end
 

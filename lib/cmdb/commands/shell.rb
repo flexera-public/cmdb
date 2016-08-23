@@ -1,9 +1,18 @@
 # encoding: utf-8
-require 'pp'
 
 module CMDB::Commands
   class Shell
+    # Character that acts as a separator between key components. The standard
+    # notation uses `.` but Shell allow allows `/` for a more filesystem-like
+    # user experience.
+    ALT_SEPARATOR = '/'.freeze
+
+    # Directory navigation shortcuts ('.' and '..')
+    NAVIGATION = /^#{Regexp.escape(CMDB::SEPARATOR + CMDB::SEPARATOR)}?$/.freeze
+
     def self.create(interface)
+      require 'cmdb/shell'
+
       options = Trollop.options do
         banner <<-EOS
 The 'shell' command enters a Unix-like shell where you can interact with
@@ -20,35 +29,77 @@ cmdb shell
     # @return [CMDB::Interface]
     attr_reader :cmdb
 
+    # @return [Array] the "present working directory" (i.e. key prefix) for shell commands
+    attr_accessor :pwd
+
+    # @return [Object] esult of the most recent command
+    attr_accessor :_
+
     # @param [CMDB::Interface] interface
     def initialize(interface)
       @cmdb = interface
+      @pwd = []
+      @out = CMDB::Shell::Printer.new
     end
 
     # Run the shim.
     #
     # @raise [SystemExit] if something goes wrong
     def run
-      @self = Self.new(cmdb)
+      @dsl = CMDB::Shell::DSL.new(self, @out)
       repl
+    end
+
+    # Given a key name/prefix relative to `pwd`, return the absolute
+    # name/prefix. If `pwd` is empty, just return `subpath`. The subpath
+    # can use either dotted or slash notation, and directory navigation
+    # symbols (`.` and `..`) are applied as expected if the subpath uses
+    # slash notation.
+    #
+    # @return [String] absolute key in dotted notation
+    def expand_path(subpath)
+      pieces = subpath.split(ALT_SEPARATOR)
+
+      if subpath[0] == ALT_SEPARATOR
+        result = []
+      else
+        result = pwd.dup
+      end
+
+      if subpath.include?(ALT_SEPARATOR) || subpath =~ NAVIGATION
+        # filesystem-like subpath
+        # apply Unix-style directory navigation shortcuts
+        pieces.each do |piece|
+          case piece
+          when '..' then result.pop
+          when '.' then nil
+          else result.push(piece)
+          end
+        end
+
+        result.join(CMDB::SEPARATOR)
+      else
+        # standard dotted notation
+        result += pieces
+      end
+
+      result.join(CMDB::SEPARATOR)
     end
 
     private
 
-    def prompt
-      "cmdb:/#{@self.pwd.join('/')}> "
-    end
-
     def repl
       require 'readline'
-      while line = Readline.readline(prompt, true)
+      while line = Readline.readline(@out.prompt(self), true)
         begin
           line = line.chomp
-          # First, try a Ruby command
+          next if line.nil? || line.empty?
           words = line.split(/\s+/)
           command, args = words.first.to_sym, words[1..-1]
+
           run_ruby(command, args) || run_getter(line) || run_setter(line) ||
-            fail(CMDB::BadCommand.new('command not found', command))
+            fail(CMDB::BadCommand.new('Unrecognized command', command))
+          handle_output(self._)
         rescue => e
           handle_error(e) || raise
         end
@@ -57,20 +108,20 @@ cmdb shell
       return 0
     end
 
+    # @return [Boolean] true if line was handled as a normal command
     def run_ruby(command, args)
-      if @self.respond_to?(command)
-        result = @self.__send__(command, *args)
-        @self._= result
-        true
-      else
-        false
-      end
+      self._ = @dsl.__send__(command, *args)
+      true
+    rescue NoMethodError
+      false
+    rescue ArgumentError => e
+      raise CMDB::BadCommand.new(e.message, command)
     end
 
+    # @return [Boolean] true if line was handled as a getter
     def run_getter(key)
-
-      if value = @self.get(key)
-        @self._= value
+      if value = @dsl.get(key)
+        self._ = value
         true
       else
         false
@@ -79,92 +130,36 @@ cmdb shell
       false
     end
 
+    # @return [Boolean] true if line was handled as a setter
     def run_setter(line)
-      key, value = line.chomp.strip.split(/\s*=\s*/, 2)
-      return false unless key
+      key, value = line.strip.split(/\s*=\s*/, 2)
+      return false unless key && value
 
       value = nil unless value && value.length > 0
-      @self.set(key, value)
-      @self._= value
+      self._ = @dsl.set(key, value)
       true
     rescue CMDB::Error
       false
+    end
+
+    def handle_output(obj)
+      case obj
+      when Hash
+        @out.keys_values(obj)
+      else
+        @out.value(obj)
+      end
     end
 
     # @return [Boolean] print message and return true if error is handled; else return false
     def handle_error(e)
       case e
       when CMDB::BadCommand
-        puts "cmdb: Unrecognized command '#{e.name}'"
-        true
-      when ArgumentError then puts "cmdb: Too many/few arguments"
+        @out.error "#{e.command}: #{e.message}"
         true
       else
         false
       end
-    end
-
-    class Self
-      # @return [Object] result of the last command
-      attr_accessor :_
-
-      attr_reader :pwd
-
-      def initialize(cmdb)
-        @cmdb = cmdb
-        @pwd = []
-      end
-
-      def ls(prefix='')
-        prefix = (pwd.join('.') + '.') + prefix unless pwd.empty?
-
-        results = @cmdb.search(prefix)
-        pp results
-      end
-
-      def help
-        puts 'Commands:'
-        puts '  cd slash/sep/path - append to search prefix'
-        puts '  cd /path          - reset prefix'
-        puts '  ls                - show keys and values'
-        puts '  <key>             - print value of key'
-        puts '  <key>=<value>     - set env key to value'
-      end
-
-      def get(key)
-        pp @cmdb.get(key)
-      end
-
-      def set(key, value)
-        @cmdb.set(key, value)
-        @cmdb.get(key)
-      end
-
-      def cd(key)
-        if key[0] == '/'
-          parts = key[0..-1].split('/')
-          dir = parts.dup
-        else
-          parts = key.split('/')
-          dir = pwd
-        end
-
-        parts.each do |p|
-          case p
-          when '..'
-            dir.pop
-          else
-            dir.push(p)
-          end
-        end
-
-        @pwd = dir
-      end
-
-      def quit
-        raise Interrupt
-      end
-      alias exit quit
     end
   end
 end

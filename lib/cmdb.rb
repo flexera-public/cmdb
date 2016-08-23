@@ -4,14 +4,14 @@ require 'set'
 require 'singleton'
 
 module CMDB
-  # Values of RACK_ENV/RAILS_ENV that are considered to be "development," which relaxes
-  # certain runtime sanity checks.
-  DEVELOPMENT_ENVIRONMENTS = [nil, 'development', 'test'].freeze
+  # Character that separates keys from subkeys in the standard notation for
+  # CMDB keys.
+  SEPARATOR = '.'.freeze
 
   # Regexp that matches valid key names. Key names consist of one or more dot-separated words;
   # each word must begin with a lowercase alpha character and may contain alphanumerics or
   # underscores.
-  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/i
+  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/i.freeze
 
   class Error < StandardError; end
 
@@ -72,6 +72,12 @@ module CMDB
 
   # Client asked to do something that does not make sense.
   class BadCommand < Error
+    attr_reader :command
+
+    def initialize(message, command)
+      super(message)
+      @command = command
+    end
   end
 
   # Two or more sources contain keys for the same namespace; this is only allowed in development

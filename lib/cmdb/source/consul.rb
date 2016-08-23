@@ -8,15 +8,18 @@ module CMDB
     # Regular expression to match array values
     ARRAY_VALUE = /^\[(.*)\]$/
 
-    # Get a single key from consul
+    # Get a single key from consul. If the key is not found, return nil.
+    #
     # @param [String] key dot-notation key
+    # @return [Object]
     def get(key)
       key = dot_to_slash(key)
       response = http_get path_to(key)
       case response
-      when Array
+      when String
+        response = json_parse(response)
         item = response.first
-        load_value(Base64.decode64(item['Value']))
+        json_parse(Base64.decode64(item['Value']))
       when 404
         nil
       else
@@ -24,27 +27,34 @@ module CMDB
       end
     end
 
-    # Set a single key in consul.
+    # Set a single key in consul. If value is nil, then delete the key
+    # entirely from consul.
+    #
     # @param [String] key dot-notation key
+    # @param [Object] value new value of key
     def set(key, value)
       key = dot_to_slash(key)
-      http_put path_to(key), value
+      if value.nil?
+        http_delete path_to(key)
+      else
+        http_put path_to(key), value
+      end
     end
 
     # Iterate through all keys in this source.
     # @return [Integer] number of key/value pairs that were yielded
     def each_pair(&_block)
       path = path_to('/')
-      all = http_get path, query:'recurse'
+      all = json_parse(http_get(path, query:'recurse'))
       unless all.is_a?(Array)
         raise CMDB::Error.new("Unexpected consul response to 'GET #{path}': #{all.inspect}")
       end
 
       all.each do |item|
-        dotted_prefix = (@preix && @prefix.split('/').join('.')) || ''
-        dotted_key = item['Key'].split('/').join('.')
-        key = dotted_prefix == '' ? dotted_key : dotted_key.split("#{dotted_prefix}.").last
-        value = load_value(Base64.decode64(item['Value']))
+        dotted_prefix = (@prefix && slash_to_dot(@prefix)) || ''
+        dotted_key = slash_to_dot(item['Key'])
+        key = dotted_prefix == '' ? dotted_key : dotted_key.sub("#{dotted_prefix}#{CMDB::SEPARATOR}", '')
+        value = json_parse(Base64.decode64(item['Value']))
         yield(key, value)
       end
 

@@ -7,7 +7,7 @@ gem 'rake'
 
 group :test do
   gem 'backticks', '1.0.0rc1'
-  gem 'docker-compose', '1.0.0rc1'
+  gem 'docker-compose', '1.0.0rc2'
   gem 'cucumber'
   gem 'rspec'
   gem 'rubocop'
