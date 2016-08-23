@@ -13,6 +13,7 @@ module CMDB
     # @param [String] key dot-notation key
     # @return [Object]
     def get(key)
+      return nil unless prefixed?(key)
       key = dot_to_slash(key)
       response = http_get path_to(key)
       case response
@@ -45,20 +46,25 @@ module CMDB
     # @return [Integer] number of key/value pairs that were yielded
     def each_pair(&_block)
       path = path_to('/')
-      all = json_parse(http_get(path, query:'recurse'))
-      unless all.is_a?(Array)
-        raise CMDB::Error.new("Unexpected consul response to 'GET #{path}': #{all.inspect}")
+
+      case result = http_get(path, query:'recurse')
+      when String
+        result = json_parse(result)
+      when 404
+        return # no keys!
       end
 
-      all.each do |item|
-        dotted_prefix = (@prefix && slash_to_dot(@prefix)) || ''
-        dotted_key = slash_to_dot(item['Key'])
-        key = dotted_prefix == '' ? dotted_key : dotted_key.sub("#{dotted_prefix}#{CMDB::SEPARATOR}", '')
+      unless result.is_a?(Array)
+        raise CMDB::Error.new("Consul 'GET #{path}': expected Array, got #{all.class.name}")
+      end
+
+      result.each do |item|
+        key = slash_to_dot(item['Key'])
         value = json_parse(Base64.decode64(item['Value']))
         yield(key, value)
       end
 
-      all.size
+      result.size
     end
 
     # Test connectivity to consul agent.
@@ -73,10 +79,10 @@ module CMDB
     private
 
     # Given a key's relative path, return its absolute REST path in the consul
-    # kv, including any prefix that was specified at startup.
+    # kv, including prefix if appropriate.
     def path_to(subkey)
       p = '/v1/kv/'
-      (p << prefix << '/') unless prefix.nil?
+      p << prefix << '/' if prefix
       p << subkey unless (subkey == '/' && p[-1] == '/')
       p
     end

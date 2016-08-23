@@ -27,15 +27,15 @@ module CMDB
     end
   end
 
-  # Client asked for an invalid or malformed key name.
+  # Client used a malformed key name.
   class BadKey < Error
     # @return [String] the name of the offending key
     attr_reader :key
 
     # @param [String] name
-    def initialize(key)
+    def initialize(key, message="Malformed key '#{key}'")
+      super(message)
       @key = key
-      super("Malformed key '#{key}'")
     end
   end
 
@@ -74,7 +74,7 @@ module CMDB
   class BadCommand < Error
     attr_reader :command
 
-    def initialize(message, command)
+    def initialize(command, message='Unrecognized command')
       super(message)
       @command = command
     end
@@ -94,8 +94,8 @@ module CMDB
   # Deprecated name for ValueConflict
   Conflict = ValueConflict
 
-  # Two or more keys in different namespaces have an identical name. This isn't an error
-  # when CMDB is used to refer to keys by their full, qualified name, but it can become
+  # Two or more keys in different sources have an identical name. This isn't an error
+  # when CMDB is used to refer to keys by their full, prefixed name, but it can become
   # an issue when loading keys into the environment for 12-factor apps to process.
   class NameConflict < Error
     attr_reader :env

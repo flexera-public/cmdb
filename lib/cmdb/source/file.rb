@@ -41,19 +41,18 @@ module CMDB
 
     # Get the value of key.
     #
-    # @return [nil,String,Numeric,TrueClass,FalseClass,Array] the key's value, or nil if not found
+    # @return [Object] the key's value, or nil if not found
     def get(key)
       @data[key]
     end
 
-    # Enumerate the keys in this source, and their values.
+    # Enumerate the keys and values in this source.
     #
     # @yield every key/value in the source
     # @yieldparam [String] key
     # @yieldparam [Object] value
     def each_pair(&_block)
-      # Strip the prefix in the key and call the block
-      @data.each_pair { |k, v| yield(k.sub("#{@prefix}#{CMDB::SEPARATOR}", ''), v) }
+      @data.each_pair { |k, v| yield(k, v) }
     end
 
     private

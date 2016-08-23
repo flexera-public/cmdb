@@ -81,16 +81,23 @@ module CMDB
     end
 
     # Convert dotted notation to slash-separated notation without an initial
-    # slash (i.e. a suffix of a URI path).
+    # slash. Remove prefix if appropriate; raise an error if the key name
+    # does not begin with this source's prefix.
     def dot_to_slash(key)
-      key.split(CMDB::SEPARATOR).join('/')
+      unless prefixed?(key)
+        raise CMDB::BadKey.new(key, "Keys of this source must begin with #{prefix}.")
+      end
+      pieces = key.split(CMDB::SEPARATOR)
+      pieces.shift
+      pieces.join('/')
     end
 
     # Convert a slash-separated URI path or subpath to dotted notation. If there is an initial
-    # slash, discard it.
+    # slash, discard it. Prepend source's prefix to key name if not already present.
     def slash_to_dot(path)
       pieces = path.split('/')
       pieces.shift if pieces[0].empty?
+      pieces.unshift(prefix) unless prefix.nil? || pieces[0] == prefix
       pieces.join(CMDB::SEPARATOR)
     end
   end

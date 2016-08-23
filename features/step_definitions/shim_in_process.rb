@@ -6,7 +6,7 @@ When /^I run Commands::Shim with(out)? "user:?(.*)"$/ do |negatory, user|
   @shim_logger = Logger.new(@shim_in_process_output)
   @interface = CMDB::Interface.new
 
-  opts = {rewrite:false, pretend:false, env:false, user:nil}
+  opts = {rewrite:false, pretend:false, user:nil}
   opts[:user] = user unless negatory
 
   @shim = CMDB::Commands::Shim.new(@interface, command, **opts)

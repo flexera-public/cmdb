@@ -98,7 +98,7 @@ cmdb shell
           command, args = words.first.to_sym, words[1..-1]
 
           run_ruby(command, args) || run_getter(line) || run_setter(line) ||
-            fail(CMDB::BadCommand.new('Unrecognized command', command))
+            fail(CMDB::BadCommand.new(command))
           handle_output(self._)
         rescue => e
           handle_error(e) || raise

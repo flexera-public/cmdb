@@ -63,12 +63,11 @@ Where [options] are selected from:
 
     # Create a Shim.
     # @param [Array] command collection of string to pass to Kernel#exec; 0th element is the command name
-    def initialize(interface, command, rewrite:, pretend:, env:, user:)
+    def initialize(interface, command, rewrite:, pretend:, user:)
       @cmdb            = interface
       @command         = command
       @dir             = rewrite
       @pretend         = pretend
-      @env             = env
       @user            = user
     end
 
@@ -144,8 +143,6 @@ Where [options] are selected from:
 
     # @return [Boolean]
     def populate_environment
-      return false unless @env
-
       env = @cmdb.to_h
 
       env.keys.each do |k|

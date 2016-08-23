@@ -62,8 +62,6 @@ module CMDB
         Source::Consul.new(URI.parse(curi.to_s), prefix)
       when 'file'
         Source::File.new(uri.path, prefix)
-      when 'env'
-        Source::Environment.new
       else
         raise ArgumentError, "Unrecognized URL scheme '#{uri.scheme}'"
       end
@@ -80,10 +78,17 @@ module CMDB
 
       sources
     end
+
+    private
+
+    # Check whether a key's prefix is suitable for this source.
+    def prefixed?(key)
+      prefix.nil? || (key.index(prefix) == 0 && key[prefix.size] == '.')
+    end
   end
 end
 
-require 'cmdb/source/environment'
+require 'cmdb/source/memory'
 require 'cmdb/source/file'
 require 'cmdb/source/network'
 require 'cmdb/source/consul'

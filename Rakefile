@@ -23,7 +23,7 @@ task :sandbox do
   compose = Docker::Compose::Session.new
   compose.up 'consul', detached:true
   mapper = Docker::Compose::Mapper.new(compose)
-  url = mapper.map('consul://consul:8500')
+  url = mapper.map('consul://consul:8500/sandbox')
 
   lib = File.expand_path('../lib', __FILE__)
   exec "ruby -I#{lib} -rpry exe/cmdb --source=#{url} shell"

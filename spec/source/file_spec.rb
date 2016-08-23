@@ -1,12 +1,13 @@
 # encoding: utf-8
 describe CMDB::Source::File do
-  let(:data) { { 'foo.bar' => 'foobar', 'baz' => [1, 2, 3], 'quux' => true } }
   let(:source_prefix) { 'common' }
-  let(:source_key_env) { { 'FOO_BAR' => 'foobar', 'BAZ' => '[1,2,3]', 'QUUX' => 'true' } }
-  let(:source_key_dotted) { { 'common.foo.bar' => 'foobar', 'common.baz' => [1, 2, 3], 'common.quux' => true } }
-  let(:data_types) { [Array, TrueClass] }
+  let(:source_data) { { 'common.foo.bar' => 'foobar', 'common.baz' => [1, 2, 3], 'common.quux' => true } }
 
-  let(:raw_data) { JSON.dump(data) }
+  let(:raw_data) do
+    hh = source_data.inject({}) { |h, kv| h[kv[0].sub('common.', '')] = kv[1]; h }
+    JSON.dump(hh)
+  end
+
   let(:data_file) { Tempfile.new(['cmdb--rspec', '.json']) }
 
   before do

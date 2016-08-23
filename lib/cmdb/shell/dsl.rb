@@ -45,7 +45,7 @@ module CMDB::Shell
       if @cmdb.set(key, value)
         @cmdb.get(key)
       else
-        ::Kernel.raise ::CMDB::BadCommand.new("No source is capable of accepting writes", "set")
+        ::Kernel.raise ::CMDB::BadCommand.new('set', 'No source is capable of accepting writes')
       end
     end
 
