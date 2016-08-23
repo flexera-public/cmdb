@@ -128,7 +128,7 @@ cmdb shell
       else
         false
       end
-    rescue CMDB::Error
+    rescue CMDB::BadKey
       false
     end
 
@@ -140,14 +140,12 @@ cmdb shell
       value = nil unless value && value.length > 0
       self._ = @dsl.set(key, value)
       true
-    rescue CMDB::Error
-      false
     end
 
     def handle_output(obj)
       case obj
       when Hash
-        @out.keys_values(obj)
+        @out.keys_values(obj, prefix:pwd.join('.'))
       else
         @out.value(obj)
       end
@@ -158,6 +156,9 @@ cmdb shell
       case e
       when CMDB::BadCommand
         @out.error "#{e.command}: #{e.message}"
+        true
+      when CMDB::Error
+        @out.error e.message
         true
       when SystemCallError
         @out.error "#{e.class.name}: #{e.message}"

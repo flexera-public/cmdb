@@ -3,7 +3,7 @@ module CMDB::Shell
     def initialize(out=STDOUT, err=STDERR)
       @out = out
       @err = err
-      @c = Text.new(!@out.tty?)
+      @c = Text.new(!@out.tty? || ENV['TERM'].nil?)
     end
 
     # Print an informational message.
@@ -19,7 +19,7 @@ module CMDB::Shell
 
     # Display a single CMDB value.
     def value(obj)
-      @out.puts '  ' + color_value(obj, 76)
+      @out.puts '  ' + color_value(obj, @c.width-2)
       self
     end
 
@@ -27,15 +27,14 @@ module CMDB::Shell
     def keys_values(h, prefix:nil)
       wk = h.keys.inject(0) { |ax, e| e.size > ax ? e.size : ax }
       wv = h.values.inject(0) { |ax, e| es = e.inspect.size; es > ax ? es : ax }
-      width = @c.tty_columns
-      half = width / 2 - 2
-      wk = [wk, half].min
+      half = @c.width / 2
+      wk = [wk, half].min-3
       wv = [wv, half].min
-      re = (width - wk - wv)
+      re = (@c.width - wk - wv)
       wv += re if re > 0
 
       h.each do |k, v|
-        @out.puts format('  %s%s', color_key(k, wk+1, prefix:prefix), color_value(v, wv))
+        @out.puts format('  %s %s', color_key(k, wk+1, prefix:prefix), color_value(v, wv))
       end
 
       self
@@ -43,8 +42,9 @@ module CMDB::Shell
 
     # @return [String] human-readable CMDB prompt
     def prompt(cmdb)
+      max=@c.width/2
       pwd = '/' + cmdb.pwd.join('/')
-      pwd = pwd[0...40] + '...' if pwd.size >= 40
+      pwd = '...' + pwd[-max..-1] if pwd.size >= max
       'cmdb:' +
         @c.green(pwd) +
         @c.default('> ')
@@ -56,7 +56,7 @@ module CMDB::Shell
     # to make it YAML-esque.
     def color_key(k, size, prefix:nil)
       v = k.to_s
-      v.sub(prefix, '') if prefix && v.index(prefix) == 0
+      v = v.sub(prefix, '') if prefix && v.index(prefix) == 0
       suffix = ':'
       if v.size + 1 > size
         v = v[0...size-4]
@@ -76,7 +76,6 @@ module CMDB::Shell
       else
         vv = v.inspect
       end
-      vv << (' ' * [0, size - vv.size].max)
 
       case v
       when Symbol

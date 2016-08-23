@@ -15,6 +15,7 @@ module CMDB::Shell
 
     def initialize(plain)
       @plain = plain
+      trap('SIGWINCH') { @width = nil } unless @plain
     end
 
     COLORS.each_pair do |color, value|
@@ -54,11 +55,11 @@ module CMDB::Shell
     alias_method :bright_default, :bold
 
     # @return [Integer] screen width (number of columns)
-    def tty_columns
+    def width
       if @plain
         65_535
       else
-        Integer(`stty size`.chomp.split(/ +/)[1]) rescue 80
+        @width ||= Integer(`stty size`.chomp.split(/ +/)[1]) rescue 80
       end
     end
   end
