@@ -10,11 +10,12 @@ module CMDB
     private
 
     # Perform a GET. On 2xx, return the response body as a String.
-    # On 3xx, 4xx, 5xx, return an Integer status code.
+    # On 3xx or 4xx return an Integer status code. On 5xx, retry up to
+    # the specified number of times, then return an Integer status code.
     #
     # @param [String] path
     # @return [Integer,String]
-    def http_get(path, query:nil)
+    def http_get(path, query:nil, retries:3)
       @http ||= Net::HTTP.start(@uri.host, @uri.port)
       uri = @uri.dup
       uri.path = path
@@ -26,8 +27,14 @@ module CMDB
       case response.code.to_i
       when 200..299
         response.body
+      when 500..599
+        if retries > 0
+          http_get(path, query:query, retries:retries-1)
+        else
+          response.code.to_i
+        end
       else
-        return response.code.to_i
+        response.code.to_i
       end
     end
 

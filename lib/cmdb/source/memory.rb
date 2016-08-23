@@ -8,7 +8,7 @@ module CMDB
     # @return [String] the empty string
     attr_reader :prefix
 
-    # Construct a new Source::Hahs.
+    # Construct a new Source::Memory.
     def initialize(hash, prefix)
       @hash = hash
       @prefix = prefix

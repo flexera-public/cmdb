@@ -100,6 +100,8 @@ cmdb shell
           run_ruby(command, args) || run_getter(line) || run_setter(line) ||
             fail(CMDB::BadCommand.new(command))
           handle_output(self._)
+        rescue SystemCallError => e
+          handle_error(e) || raise
         rescue => e
           handle_error(e) || raise
         end
@@ -157,6 +159,8 @@ cmdb shell
       when CMDB::BadCommand
         @out.error "#{e.command}: #{e.message}"
         true
+      when SystemCallError
+        @out.error "#{e.class.name}: #{e.message}"
       else
         false
       end

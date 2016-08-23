@@ -26,5 +26,5 @@ task :sandbox do
   url = mapper.map('consul://consul:8500/sandbox')
 
   lib = File.expand_path('../lib', __FILE__)
-  exec "ruby -I#{lib} -rpry exe/cmdb --source=#{url} shell"
+  exec "bin/shell --source=#{url}"
 end

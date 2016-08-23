@@ -62,6 +62,8 @@ module CMDB
         Source::Consul.new(URI.parse(curi.to_s), prefix)
       when 'file'
         Source::File.new(uri.path, prefix)
+      when 'memory'
+        Source::Memory.new({},nil)
       else
         raise ArgumentError, "Unrecognized URL scheme '#{uri.scheme}'"
       end
