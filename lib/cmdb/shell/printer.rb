@@ -1,14 +1,15 @@
 module CMDB::Shell
   class Printer
-    def initialize(out=STDOUT, err=STDERR)
+    def initialize(out=$stdout, err=$stderr, text=Text.new(true))
       @out = out
       @err = err
-      @c = Text.new(!@out.tty? || ENV['TERM'].nil?)
+      @c = text
     end
 
     # Print an informational message.
     def info(str)
       @out.puts @c.white(str)
+      self
     end
 
     # Print an error message.
@@ -38,16 +39,6 @@ module CMDB::Shell
       end
 
       self
-    end
-
-    # @return [String] human-readable CMDB prompt
-    def prompt(cmdb)
-      max=@c.width/2
-      pwd = '/' + cmdb.pwd.join('/')
-      pwd = '...' + pwd[-max..-1] if pwd.size >= max
-      'cmdb:' +
-        @c.green(pwd) +
-        @c.default('> ')
     end
 
     private

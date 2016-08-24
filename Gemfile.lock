@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cmdb (3.0.0rc1)
+    cmdb (3.0.0rc2)
       trollop (~> 2.0)
 
 GEM

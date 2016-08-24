@@ -29,6 +29,9 @@ cmdb shell
     # @return [CMDB::Interface]
     attr_reader :cmdb
 
+    # @return [CMDB::Shell::DSL]
+    attr_reader :dsl
+
     # @return [Array] the "present working directory" (i.e. key prefix) for shell commands
     attr_accessor :pwd
 
@@ -39,7 +42,9 @@ cmdb shell
     def initialize(interface)
       @cmdb = interface
       @pwd = []
-      @out = CMDB::Shell::Printer.new
+      text = CMDB::Shell::Text.new(!$stdout.tty? || ENV['TERM'].nil?)
+      @out = CMDB::Shell::Printer.new($stdout, $stderr, text)
+      @in  = CMDB::Shell::Prompter.new(text)
     end
 
     # Run the shim.
@@ -58,8 +63,6 @@ cmdb shell
     #
     # @return [String] absolute key in dotted notation
     def expand_path(subpath)
-      pieces = subpath.split(ALT_SEPARATOR)
-
       if subpath[0] == ALT_SEPARATOR
         result = []
       else
@@ -69,6 +72,7 @@ cmdb shell
       if subpath.include?(ALT_SEPARATOR) || subpath =~ NAVIGATION
         # filesystem-like subpath
         # apply Unix-style directory navigation shortcuts
+        pieces = subpath.split(ALT_SEPARATOR).select { |p| !p.nil? && !p.empty? }
         pieces.each do |piece|
           case piece
           when '..' then result.pop
@@ -79,6 +83,7 @@ cmdb shell
 
         result.join(CMDB::SEPARATOR)
       else
+        pieces = subpath.split(CMDB::SEPARATOR).select { |p| !p.nil? && !p.empty? }
         # standard dotted notation
         result += pieces
       end
@@ -89,14 +94,7 @@ cmdb shell
     private
 
     def repl
-      require 'readline'
-      Readline.completion_proc = proc do |word|
-        commands = @dsl.class.instance_methods.select { |m| m.to_s.index(word) == 0}.map(&:to_s)
-        next commands if commands.any?
-        @cmdb.search(expand_path(word)).keys
-      end
-
-      while line = Readline.readline(@out.prompt(self), true)
+      while line = @in.read(self)
         begin
           line = line.chomp
           next if line.nil? || line.empty?

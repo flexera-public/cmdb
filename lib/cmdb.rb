@@ -129,7 +129,7 @@ module CMDB
 
   def log
     unless @log
-      @log = Logger.new(STDOUT)
+      @log = Logger.new($stderr)
 
       @log.formatter = Proc.new do |severity, datetime, progname, msg|
         "#{severity}: #{msg}\n"

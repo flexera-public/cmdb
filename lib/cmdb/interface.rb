@@ -78,7 +78,7 @@ module CMDB
     end
 
     def search(prefix)
-      prefix = Regexp.new('^' + Regexp.escape(prefix))
+      prefix = Regexp.new('^' + Regexp.escape(prefix)) unless prefix.is_a?(Regexp)
       result = {}
 
       @sources.each do |s|
