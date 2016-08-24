@@ -90,6 +90,12 @@ cmdb shell
 
     def repl
       require 'readline'
+      Readline.completion_proc = proc do |word|
+        commands = @dsl.class.instance_methods.select { |m| m.to_s.index(word) == 0}.map(&:to_s)
+        next commands if commands.any?
+        @cmdb.search(expand_path(word)).keys
+      end
+
       while line = Readline.readline(@out.prompt(self), true)
         begin
           line = line.chomp

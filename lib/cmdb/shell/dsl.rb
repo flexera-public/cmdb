@@ -10,8 +10,12 @@ module CMDB::Shell
       @out = out
     end
 
+    def class
+      DSL
+    end
+
     def method_missing(meth, *args)
-      raise ::CMDB::BadCommand.new(meth)
+      ::Kernel.raise ::CMDB::BadCommand.new(meth)
     end
 
     def ls(path='')
