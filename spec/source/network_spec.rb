@@ -3,7 +3,7 @@ describe CMDB::Source::Network do
   let(:uri) { URI.parse('http://localhost') }
   let(:prefix) { 'common' }
 
-  subject { described_class.new(uri, prefix) }
+  subject { described_class.new(uri, 80, prefix) }
 
   describe '#http_get' do
     it 'retries three times by default' do

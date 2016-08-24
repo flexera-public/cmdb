@@ -68,7 +68,7 @@ And /^the output should (not )?include "(.*)"$/ do |negatory, message|
   if @shim_command
     # Shim was run as a subprocess; look at its stdout
     @shim_command.join(3)
-    @shim_output = @shim_command.captured_output
+    @shim_output = @shim_command.captured_output + @shim_command.captured_error
   else
     # Shim was run in-process; make sure test rigging initialized captured
     # its output
@@ -87,7 +87,7 @@ And /^the output should have keys: (.*)$/ do |kvs|
   if @shim_command
     # Shim was run as a subprocess; look at its stdout
     @shim_command.join(3)
-    @shim_output = @shim_command.captured_output
+    @shim_output = @shim_command.captured_output + @shim_command.captured_error
   else
     # Shim was run in-process; make sure test rigging initialized captured
     # its output

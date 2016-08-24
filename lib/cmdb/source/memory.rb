@@ -10,8 +10,9 @@ module CMDB
 
     # Construct a new Source::Memory.
     def initialize(hash, prefix)
+      uri = URI.parse("memory:#{hash.object_id}")
+      super(uri, prefix)
       @hash = hash
-      @prefix = prefix
     end
 
     # Get the value of key.

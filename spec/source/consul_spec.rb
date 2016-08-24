@@ -14,7 +14,7 @@ describe CMDB::Source::Consul do
   end
 
   let(:prefix) { 'common' }
-  let(:uri) { URI.parse('http://localhost:8500/') }
+  let(:uri) { URI.parse('consul://localhost/common') }
   subject { described_class.new(uri, prefix) }
 
   before do
@@ -37,4 +37,35 @@ describe CMDB::Source::Consul do
   it_behaves_like 'a source'
 
   it_behaves_like 'a settable source'
+
+  describe '#path_to' do
+    let(:prefix) { nil }
+
+    context 'given a long base path' do
+      let(:uri) { URI.parse('http://localhost:8500/bar/baz') }
+
+      it 'behaves' do
+        expect(subject.path_to('quux')).to eq('/v1/kv/bar/baz/quux')
+        expect(subject.path_to('/')).to eq('/v1/kv/bar/baz/')
+      end
+    end
+
+    context 'given a short base path' do
+      let(:uri) { URI.parse('http://localhost:8500/bar') }
+
+      it 'behaves' do
+        expect(subject.path_to('quux')).to eq('/v1/kv/bar/quux')
+        expect(subject.path_to('/')).to eq('/v1/kv/bar/')
+      end
+    end
+
+    context 'given an empty base path' do
+      let(:uri) { URI.parse('http://localhost:8500') }
+
+      it 'behaves' do
+        expect(subject.path_to('quux')).to eq('/v1/kv/quux')
+        expect(subject.path_to('/')).to eq('/v1/kv/')
+      end
+    end
+  end
 end

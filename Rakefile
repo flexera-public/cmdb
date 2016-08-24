@@ -23,8 +23,8 @@ task :sandbox do
   compose = Docker::Compose::Session.new
   compose.up 'consul', detached:true
   mapper = Docker::Compose::Mapper.new(compose)
-  url = mapper.map('consul://consul:8500/sandbox')
+  uri = mapper.map('consul://consul:8500/sandbox')
 
   lib = File.expand_path('../lib', __FILE__)
-  exec "bin/shell --source=#{url}"
+  exec "bin/shell --source=#{uri}"
 end

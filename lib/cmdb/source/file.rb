@@ -10,32 +10,33 @@ module CMDB
   #    source = Source::File.new('/tmp/my.yml') # contains a top-level stanza named "database"
   #    source['my']['database']['host'] # => 'db1-1.example.com'
   class Source::File < Source
-    # Construct a new Source::File from an input file.
-    # @param [String,Pathname] filename path to a file
-    # @param [String] prefix optional prefix of
+    # Read a data file whose location is specified by a file:// URI.
+    #
+    # @param [URI] uri logical description of this source
+    # @param [String] prefix unique dot-notation prefix of all this source's keys, if any
     # @raise [BadData] if the file's content is malformed
-    def initialize(filename, prefix)
-      @data = {}
-      @prefix = prefix
-      filename = ::File.expand_path(filename)
-      @url = URI.parse("file://#{filename}")
-      @extension = ::File.extname(filename)
-      raw_bytes = ::File.read(filename)
+    def initialize(uri, prefix)
+      super(uri, prefix)
+      path = @uri.path
+      filename  = ::File.basename(path)
+      extension = ::File.extname(filename)
+      raw_bytes = ::File.read(path)
       raw_data  = nil
 
       begin
-        case @extension
+        case extension
         when /jso?n?$/i
           raw_data = JSON.load(raw_bytes)
         when /ya?ml$/i
           raw_data = YAML.load(raw_bytes)
         else
-          raise BadData.new(url, 'file with unknown extension; expected js(on) or y(a)ml')
+          raise BadData.new(@uri, 'file with unknown extension; expected js(on) or y(a)ml')
         end
       rescue StandardError
-        raise BadData.new(url, 'CMDB data file')
+        raise BadData.new(@uri, 'CMDB data file')
       end
 
+      @data = {}
       flatten(raw_data, @prefix, @data)
     end
 
@@ -66,7 +67,7 @@ module CMDB
         when Array
           if value.any? { |e| e.is_a?(Hash) }
             # mismatched arrays: not allowed
-            raise BadValue.new(url, key, value, 'hashes not allowed inside arrays')
+            raise BadValue.new(uri, key, value, 'hashes not allowed inside arrays')
           elsif value.all? { |e| e.is_a?(String) } ||
              value.all? { |e| e.is_a?(Numeric) } ||
              value.all? { |e| e == true } ||
@@ -74,13 +75,13 @@ module CMDB
             output[key] = value
           else
             # mismatched arrays: not allowed
-            raise BadValue.new(url, key, value, 'mismatched/unsupported element types')
+            raise BadValue.new(uri, key, value, 'mismatched/unsupported element types')
           end
         when String, Numeric, TrueClass, FalseClass
           output[key] = value
         else
           # nil and anything else: not allowed
-          raise BadValue.new(url, key, value)
+          raise BadValue.new(uri, key, value)
         end
       end
     end

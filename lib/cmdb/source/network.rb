@@ -1,10 +1,21 @@
 module CMDB
+  # Abstract base class for sources that are backed by an HTTP k/v store.
+  # Contains reusable HTTP request logic.
   class Source::Network < Source
-    # @param [URI] uri
+    # @return [URI] HTTP base location of this source (minus path)
+    attr_reader :http_url
+
+    # Construct a new HTTP source. The logical URI is transformed into an
+    # HTTP base URL by preserving the hostname, overriding the port (unless
+    # the URI already has a specific port), replacing the scheme with http
+    # and eliminating the path.
+    #
+    # @param [String,URI] uri logical description of this source
+    # @param [Integer] port default HTTP port if not specified in URI
     # @param [String] dot-notation prefix of all keys
-    def initialize(uri, prefix)
-      @uri = uri
-      @prefix = prefix
+    def initialize(uri, port, prefix)
+      super(uri, prefix)
+      @http_url = URI.parse("http://%s:%s" % [@uri.host, @uri.port || port])
     end
 
     private
@@ -16,12 +27,12 @@ module CMDB
     # @param [String] path
     # @return [Integer,String]
     def http_get(path, query:nil, retries:3)
-      @http ||= Net::HTTP.start(@uri.host, @uri.port)
-      uri = @uri.dup
-      uri.path = path
-      uri.query = query unless query.nil? || query.empty?
+      @http ||= Net::HTTP.start(@http_url.host, @http_url.port)
+      url = @http_url.dup
+      url.path = path
+      url.query = query unless query.nil? || query.empty?
 
-      request = Net::HTTP::Get.new uri
+      request = Net::HTTP::Get.new url
       response = @http.request request
 
       case response.code.to_i
@@ -47,11 +58,11 @@ module CMDB
     def http_put(path, entity)
       entity = JSON.dump(entity) unless entity.is_a?(String)
 
-      @http ||= Net::HTTP.start(@uri.host, @uri.port)
-      uri = @uri.dup
-      uri.path = path
+      @http ||= Net::HTTP.start(@http_url.host, @http_url.port)
+      url = @http_url.dup
+      url.path = path
 
-      request = Net::HTTP::Put.new uri
+      request = Net::HTTP::Put.new url
       request.body = entity
       response = @http.request request
 
@@ -64,11 +75,11 @@ module CMDB
     # @return [Integer] HTTP status code
     # @param [String] path
     def http_delete(path)
-      @http ||= Net::HTTP.start(@uri.host, @uri.port)
-      uri = @uri.dup
-      uri.path = path
+      @http ||= Net::HTTP.start(@http_url.host, @http_url.port)
+      url = @http_url.dup
+      url.path = path
 
-      request = Net::HTTP::Delete.new uri
+      request = Net::HTTP::Delete.new url
       response = @http.request request
 
       response.code.to_i

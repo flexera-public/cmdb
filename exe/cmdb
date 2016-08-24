@@ -90,15 +90,15 @@ rescue CMDB::BadKey => e
   CMDB.log.fatal "CMDB: Bad Key: malformed CMDB key '#{e.key}'"
   exit 1
 rescue CMDB::BadValue => e
-  CMDB.log.fatal "CMDB: Bad Value: illegal value for CMDB key '#{e.key}' in source #{e.url}"
+  CMDB.log.fatal "CMDB: Bad Value: illegal value for CMDB key '#{e.key}' in source #{e.uri}"
   exit 2
 rescue CMDB::BadData => e
-  CMDB.log.fatal "CMDB: Bad Data: malformed CMDB data in source #{e.url}"
+  CMDB.log.fatal "CMDB: Bad Data: malformed CMDB data in source #{e.uri}"
   exit 3
 rescue CMDB::ValueConflict => e
   CMDB.log.fatal "CMDB: Value Conflict: #{e.message}"
   e.sources.each do |s|
-    CMDB.log.fatal " - #{s.url}"
+    CMDB.log.fatal " - #{s.uri}"
   end
   exit 4
 rescue CMDB::NameConflict => e

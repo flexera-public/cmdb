@@ -41,17 +41,17 @@ module CMDB
 
   # A value of an unsupported type was encountered in the CMDB or filesystem.
   class BadValue < Error
-    # @return [URI] filesystem or network location of the bad value
-    attr_reader :url
+    # @return [URI] source that contains the bad data
+    attr_reader :uri
 
     # @return [String] the name of the key that contained the bad value
     attr_reader :key
 
-    # @param [URI] url filesystem or network location of the bad value
+    # @param [URI] source that contains the bad value
     # @param [String] key CMDB key name under which the bad value was found
     # @param [Object] value the bad value itself
-    def initialize(url, key, value, desc=nil)
-      @url = url
+    def initialize(uri, key, value, desc=nil)
+      @uri = uri
       @key = key
       msg = "Unsupported #{value.class.name} value"
       msg << ": #{desc}" if desc
@@ -61,13 +61,13 @@ module CMDB
 
   # Malformed data was encountered in the CMDB or filesystem.
   class BadData < Error
-    # @return [URI] filesystem or network location of the bad data
-    attr_reader :url
+    # @return [URI] source that contains the bad data
+    attr_reader :uri
 
-    # @param [URI] url filesystem or network location of the bad value
+    # @param [URI] source that contains the bad value
     # @param [String] context brief description of where data was found e.g. 'CMDB data file' or 'input config file'
-    def initialize(url, context = nil)
-      @url = url
+    def initialize(uri, context = nil)
+      @uri = uri
       super("Malformed data encountered #{(' in ' + context) if context}")
     end
   end

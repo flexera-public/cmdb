@@ -8,6 +8,10 @@ module CMDB
     # Regular expression to match array values
     ARRAY_VALUE = /^\[(.*)\]$/
 
+    def initialize(uri, prefix)
+      super(uri, 8500, prefix)
+    end
+
     # Get a single key from consul. If the key is not found, return nil.
     #
     # @param [String] key dot-notation key
@@ -77,15 +81,13 @@ module CMDB
       false
     end
 
-    private
-
     # Given a key's relative path, return its absolute REST path in the consul
-    # kv, including prefix if appropriate.
-    def path_to(subkey)
-      p = '/v1/kv/'
-      p << prefix << '/' if prefix
-      p << subkey unless (subkey == '/' && p[-1] == '/')
-      p
+    # kv, including the `/v1/kv/` prefix and any subkey path specified at
+    # initialize time.
+    #
+    # @param [String] subpath key path relative to base
+    def path_to(subpath)
+      ::File.join('/v1/kv/', @uri.path, subpath)
     end
   end
 end
