@@ -24,7 +24,7 @@ Feature: config-file rewriting shim for legacy apps
     development:
       dont: touch me
     """
-    When I run the shim with argv "--rewrite=config"
+    When I run cmdb with "shim --rewrite=config"
     Then the command should succeed
     And "config/database.yml" should look like:
     """
@@ -42,7 +42,7 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<app1.bad-key>>
     """
-    When I run the shim with argv "--rewrite=config"
+    When I run cmdb with "shim --rewrite=config"
     Then the command should fail
     And the output should include "CMDB: Bad Key: malformed CMDB key 'app1.bad-key'"
 
@@ -57,7 +57,7 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<bad.value>>
     """
-    When I run the shim with argv "--rewrite=config"
+    When I run cmdb with "shim --rewrite=config"
     Then the command should fail
     And the output should include "CMDB: Bad Value: illegal value for CMDB key 'bad.value' in source file:/"
 
@@ -71,7 +71,7 @@ Feature: config-file rewriting shim for legacy apps
     integration:
       host: <<bad.value>>
     """
-    When I run the shim with argv "--rewrite=config"
+    When I run cmdb with "shim --rewrite=config"
     Then the command should fail
     And the output should include "CMDB: Bad Data: malformed CMDB data in source file:/"
 
@@ -80,7 +80,7 @@ Feature: config-file rewriting shim for legacy apps
     """
     missing: <<app1.missing>>
     """
-    When I run the shim with argv "--rewrite=config"
+    When I run cmdb with "shim --rewrite=config"
     Then the command should fail
     And the output should include "Cannot rewrite configuration"
     And the output should include "app1.missing"
@@ -94,7 +94,7 @@ Feature: config-file rewriting shim for legacy apps
     """
     hello: <<app1.database.host>>
     """
-    When I run the shim with argv "--rewrite=real_config"
+    When I run cmdb with "shim --rewrite=real_config"
     Then the command should succeed
     And "config/untouched.yml" should look like:
     """

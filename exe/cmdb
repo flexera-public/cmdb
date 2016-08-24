@@ -25,7 +25,7 @@ command_info = command_list.map { |c| "       * #{c}" }.join("\n")
 
 # Use a Trollop parser for help/banner display, but do not actually parse
 # anything just yet.
-p = Trollop::Parser.new do
+parser = Trollop::Parser.new do
   version "cmdb #{gemspec_version} (c) 2013-2014 RightScale, Inc."
   banner <<-EOS
 A command-line interface for configuration management.
@@ -54,13 +54,22 @@ Common options that apply to all commands:
   stop_on commands.keys
 end
 
-Trollop.with_standard_exception_handling p do
+subcommand = nil
+options    = nil
+
+Trollop.with_standard_exception_handling parser do
   raise Trollop::HelpNeeded if ARGV.empty?
 
   # Apply global options
-  options = p.parse ARGV
+  options = parser.parse ARGV
   CMDB.log.level = Logger::FATAL if options[:quiet]
 
+  # Identify the subcommand and run it (or print help).
+  raise Trollop::HelpNeeded if ARGV.empty?
+  subcommand = ARGV.shift
+end
+
+begin
   if options[:source].empty?
     sources = CMDB::Source.detect
   else
@@ -69,15 +78,39 @@ Trollop.with_standard_exception_handling p do
     end
   end
 
-  interface = CMDB::Interface.new(*sources)
-
-  # Identify the subcommand and run it (or print help).
-  raise Trollop::HelpNeeded if ARGV.empty?
-  cmd = ARGV.shift
-  klass = commands[cmd]
-  if klass
-    klass.create(interface).run
-  else
+  klass = commands[subcommand]
+  unless klass
     CMDB.log.fatal "Unrecognized command '#{cmd}'; try 'cmdb --help'"
+    exit 100
   end
+
+  interface = CMDB::Interface.new(*sources)
+  klass.create(interface).run
+rescue CMDB::BadKey => e
+  CMDB.log.fatal "CMDB: Bad Key: malformed CMDB key '#{e.key}'"
+  exit 1
+rescue CMDB::BadValue => e
+  CMDB.log.fatal "CMDB: Bad Value: illegal value for CMDB key '#{e.key}' in source #{e.url}"
+  exit 2
+rescue CMDB::BadData => e
+  CMDB.log.fatal "CMDB: Bad Data: malformed CMDB data in source #{e.url}"
+  exit 3
+rescue CMDB::ValueConflict => e
+  CMDB.log.fatal "CMDB: Value Conflict: #{e.message}"
+  e.sources.each do |s|
+    CMDB.log.fatal " - #{s.url}"
+  end
+  exit 4
+rescue CMDB::NameConflict => e
+  CMDB.log.fatal "CMDB: Name Conflict: #{e.message}"
+  e.keys.each do |k|
+    CMDB.log.fatal " - #{k}"
+  end
+  exit 4
+rescue CMDB::EnvironmentConflict => e
+  CMDB.log.fatal "CMDB: Environment Conflict: #{e.message}"
+  exit 5
+rescue Errno::ENOENT => e
+  CMDB.log.fatal "CMDB: missing file or directory #{e.message}"
+  exit 6
 end

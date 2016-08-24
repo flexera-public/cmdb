@@ -3,12 +3,13 @@ require 'cucumber/rspec/doubles'
 
 # Run the shim as a subprocess
 Given /^a shim with parameters "(.*)" running webrick$/ do |options|
-  step(%(I run the shim with argv "#{options} -- rackup -s webrick -p #{app_port}"))
+  step(%(I run cmdb with "#{options} shim -- rackup -s webrick -p #{app_port}"))
 
   # Wait for app to start up before we return from this step
   step(%(the output should include "I am up and running")) unless @shim_die_on_startup
 end
 
+# Populate the app's env with some parameters
 Given /^\$([A-Z0-9_]+) is "(.*)"$/ do |key, value|
   app_env[key] = value
 end
@@ -38,7 +39,7 @@ Then(/^"(.*)" should look like:$/) do |filename, content|
   parsed_file = YAML.load(file)
   parsed_content = YAML.load(content)
 
-  expect(parsed_file).to == parsed_content
+  expect(parsed_file).to eq(parsed_content)
 end
 
 Then /^the command should (succeed|fail)$/ do |pass_fail|

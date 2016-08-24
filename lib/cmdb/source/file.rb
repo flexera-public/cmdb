@@ -64,14 +64,17 @@ module CMDB
         when Hash
           flatten(value, key, output)
         when Array
-          if value.all? { |e| e.is_a?(String) } ||
+          if value.any? { |e| e.is_a?(Hash) }
+            # mismatched arrays: not allowed
+            raise BadValue.new(url, key, value, 'hashes not allowed inside arrays')
+          elsif value.all? { |e| e.is_a?(String) } ||
              value.all? { |e| e.is_a?(Numeric) } ||
              value.all? { |e| e == true } ||
              value.all? { |e| e == false }
             output[key] = value
           else
             # mismatched arrays: not allowed
-            raise BadValue.new(url, key, value)
+            raise BadValue.new(url, key, value, 'mismatched/unsupported element types')
           end
         when String, Numeric, TrueClass, FalseClass
           output[key] = value

@@ -15,10 +15,9 @@ option to tell the shim where to rewrite configuration files. It will look for t
 in JSON or YML that look like <<cmdb.key.name>> and replace them with the value of
 the specified key.
 
-To use the shim with 12-factor apps, use the --env option to tell the shim to load
-every CMDB key into the environment. When using --env, the prefix of each key is
-omitted from the environment variable name, e.g. "common.database.host" is
-represented as DATABASE_HOST.
+The shim populates the environment with all data from every source. The source-
+specific prefix of each key is omitted from the environment variable name,
+e.g. "common.database.host" is represented as DATABASE_HOST.
 
 Usage:
 cmdb shim [options] -- <command_to_exec> [options_for_command]
@@ -30,9 +29,6 @@ Where [options] are selected from:
             type: :string
         opt :pretend,
             'Check for errors, but do not actually launch the app or rewrite files',
-            default: false
-        opt :env,
-            "Add CMDB keys to the app server's process environment",
             default: false
         opt :user,
             'Switch to named user before executing app',
@@ -75,42 +71,15 @@ Where [options] are selected from:
     #
     # @raise [SystemExit] if something goes wrong
     def run
-      rewrote   = rewrite_files
-      populated = populate_environment
+      populate_environment
+      rewrote = rewrite_files
 
-      if !rewrote && !populated && !@pretend && @command.empty?
-        CMDB.log.warn 'CMDB: nothing to do; please specify --dir, --env, or a command to run'
+      if !rewrote && !@pretend && @command.empty?
+        CMDB.log.warn 'CMDB: nothing to do; please specify --dir, or -- followed by a command to run'
         exit 7
       end
 
       launch_app
-    rescue CMDB::BadKey => e
-      CMDB.log.fatal "CMDB: Bad Key: malformed CMDB key '#{e.key}'"
-      exit 1
-    rescue CMDB::BadValue => e
-      CMDB.log.fatal "CMDB: Bad Value: illegal value for CMDB key '#{e.key}' in source #{e.url}"
-      exit 2
-    rescue CMDB::BadData => e
-      CMDB.log.fatal "CMDB: Bad Data: malformed CMDB data in source #{e.url}"
-      exit 3
-    rescue CMDB::ValueConflict => e
-      CMDB.log.fatal "CMDB: Value Conflict: #{e.message}"
-      e.sources.each do |s|
-        CMDB.log.fatal " - #{s.url}"
-      end
-      exit 4
-    rescue CMDB::NameConflict => e
-      CMDB.log.fatal "CMDB: Name Conflict: #{e.message}"
-      e.keys.each do |k|
-        CMDB.log.fatal " - #{k}"
-      end
-      exit 4
-    rescue CMDB::EnvironmentConflict => e
-      CMDB.log.fatal "CMDB: Environment Conflict: #{e.message}"
-      exit 5
-    rescue Errno::ENOENT => e
-      CMDB.log.fatal "CMDB: missing file or directory #{e.message}"
-      exit 6
     end
 
     private
@@ -143,8 +112,7 @@ Where [options] are selected from:
 
     # @return [Boolean]
     def populate_environment
-      env = @cmdb.to_h
-
+      env = @cmdb.to_env
       env.keys.each do |k|
         raise CMDB::EnvironmentConflict.new(k) if ENV.key?(k)
       end
@@ -153,6 +121,7 @@ Where [options] are selected from:
         false
       else
         env.each_pair do |k, v|
+          raise "WOOGA #{k} #{v}" if k.kind_of?(Array) || v.kind_of?(Array)
           ENV[k] = v
         end
         true

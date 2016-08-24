@@ -29,7 +29,7 @@ CMDB has three primary interfaces:
 
   1. The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
      config files, then spawns your application.
-  2. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_h`
+  2. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_env`
      method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
      environment yourself, without using the shim.
   3. The `cmdb shell` command navigates your k/v store using filesystem-like

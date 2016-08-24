@@ -101,19 +101,19 @@ module CMDB
     # rather than returning bad data.
     #
     # @raise [NameConflict] if two or more key names transform to the same
-    def to_h
+    def to_env
       values = {}
-      sources = {}
+      originals = {}
 
-      each_pair do |key, value|
-        env_key = key_to_env(key)
-        value = JSON.dump(value) unless value.is_a?(String)
-
-        if sources.key?(env_key)
-          raise NameConflict.new(env_key, [sources[env_key], key])
-        else
-          sources[env_key] = key
-          values[env_key] = value_to_env(value)
+      @sources.each do |s|
+        s.each_pair do |k, v|
+          env = key_to_env(k, s)
+          if (orig = originals[env])
+            raise NameConflict.new(env, [orig, k])
+          else
+            values[env] = value_to_env(v)
+            originals[env] = k
+          end
         end
       end
 
@@ -135,8 +135,12 @@ module CMDB
     end
 
     # Make an environment variable out of a key name
-    def key_to_env(key)
-      env_name = key
+    def key_to_env(key, source)
+      if source.prefix
+        env_name = key[source.prefix.size+1..-1]
+      else
+        env_name = key.dup
+      end
       env_name.gsub!(/[^A-Za-z0-9_]+/, '_')
       env_name.upcase!
       env_name

@@ -39,7 +39,7 @@ module CMDB
     end
   end
 
-  # A value of an unsupported type was encountered in the CMDB.
+  # A value of an unsupported type was encountered in the CMDB or filesystem.
   class BadValue < Error
     # @return [URI] filesystem or network location of the bad value
     attr_reader :url
@@ -50,14 +50,16 @@ module CMDB
     # @param [URI] url filesystem or network location of the bad value
     # @param [String] key CMDB key name under which the bad value was found
     # @param [Object] value the bad value itself
-    def initialize(url, key, value)
+    def initialize(url, key, value, desc=nil)
       @url = url
       @key = key
-      super("Values of type #{value.class.name} are unsupported")
+      msg = "Unsupported #{value.class.name} value"
+      msg << ": #{desc}" if desc
+      super(msg)
     end
   end
 
-  # Malformed data was encountered in the CMDB or in an app's filesystem.
+  # Malformed data was encountered in the CMDB or filesystem.
   class BadData < Error
     # @return [URI] filesystem or network location of the bad data
     attr_reader :url
@@ -94,7 +96,7 @@ module CMDB
   # Deprecated name for ValueConflict
   Conflict = ValueConflict
 
-  # Two or more keys in different sources have an identical name. This isn't an error
+  # Two or more keys in prefixed sources have an identical name. This isn't an error
   # when CMDB is used to refer to keys by their full, prefixed name, but it can become
   # an issue when loading keys into the environment for 12-factor apps to process.
   class NameConflict < Error
