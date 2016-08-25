@@ -48,19 +48,21 @@ module CMDB
 
     # Set the value of a CMDB key.
     #
-    # @return [Source,ni] the source that accepted the write, if any
+    # @return [Source,nil] the source that accepted the write, if any
     # @raise [BadKey] if the key name is malformed
     def set(key, value)
       raise BadKey.new(key) unless key =~ VALID_KEY
 
-      @sources.reverse.each do |s|
+      wrote = nil
+      @sources.each do |s|
         if s.respond_to?(:set)
-          s.set(key, value)
-          return s
+          if s.set(key, value)
+            wrote = s
+            break
+          end
         end
       end
-
-      nil
+      wrote
     end
 
     # Enumerate all of the keys in the CMDB.
@@ -77,13 +79,15 @@ module CMDB
       self
     end
 
-    def search(prefix)
-      prefix = Regexp.new('^' + Regexp.escape(prefix)) unless prefix.is_a?(Regexp)
+    # @return [Hash] all keys/values that match query
+    # @param [String,Regexp] query key name prefix or pattern to search for
+    def search(query)
+      query = Regexp.new('^' + Regexp.escape(query)) unless query.is_a?(Regexp)
       result = {}
 
       @sources.each do |s|
         s.each_pair do |k, v|
-          result[k] = v if k =~ prefix
+          result[k] = v if k =~ query
         end
       end
 

@@ -55,10 +55,10 @@ RSpec.shared_examples 'a settable source' do
       expect(subject.get(key)).to eq(true)
     end
 
-    it 'raises BadKey given an invalid prefix' do
-      expect {
+    it 'returns nil given an invalid prefix' do
+      expect(
         subject.set('sfkuysdfiuyasiuys.unlikely', true)
-      }.to raise_error(CMDB::BadKey)
+      ).to eq(nil)
     end
   end
 end

@@ -23,8 +23,9 @@ task :sandbox do
   compose = Docker::Compose::Session.new
   compose.up 'consul', detached:true
   mapper = Docker::Compose::Mapper.new(compose)
-  uri = mapper.map('consul://consul:8500/sandbox')
+  source1 = mapper.map('consul://consul:8500/sandbox/apples')
+  source2 = mapper.map('consul://consul:8500/sandbox/oranges')
 
   lib = File.expand_path('../lib', __FILE__)
-  exec "bin/shell --source=#{uri}"
+  exec "bin/shell --source=#{source1} --source=#{source2}"
 end

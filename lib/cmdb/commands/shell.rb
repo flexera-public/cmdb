@@ -72,6 +72,7 @@ cmdb shell
       if subpath.include?(ALT_SEPARATOR) || subpath =~ NAVIGATION
         # filesystem-like subpath
         # apply Unix-style directory navigation shortcuts
+        # ge rid of successive //// and other oddities
         pieces = subpath.split(ALT_SEPARATOR).select { |p| !p.nil? && !p.empty? }
         pieces.each do |piece|
           case piece
@@ -81,14 +82,15 @@ cmdb shell
           end
         end
 
-        result.join(CMDB::SEPARATOR)
+        CMDB.join(result)
       else
-        pieces = subpath.split(CMDB::SEPARATOR).select { |p| !p.nil? && !p.empty? }
         # standard dotted notation
+        # get rid of successive .... and other oddities
+        pieces = CMDB.split(subpath).select { |p| !p.nil? && !p.empty? }
         result += pieces
       end
 
-      result.join(CMDB::SEPARATOR)
+      CMDB.join(result)
     end
 
     private

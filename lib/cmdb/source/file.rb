@@ -60,7 +60,7 @@ module CMDB
 
     def flatten(data, prefix, output)
       data.each_pair do |key, value|
-        key = "#{prefix}#{CMDB::SEPARATOR}#{key}"
+        key = CMDB.join(prefix, key)
         case value
         when Hash
           flatten(value, key, output)

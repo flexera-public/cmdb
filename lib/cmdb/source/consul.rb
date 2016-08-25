@@ -10,6 +10,9 @@ module CMDB
 
     def initialize(uri, prefix)
       super(uri, 8500, prefix)
+      useless = uri.path.split('/')
+      useless.shift ; useless.pop # del initial "" and final word (aka prefix)
+      @useless = CMDB.join(useless)
     end
 
     # Get a single key from consul. If the key is not found, return nil.
@@ -33,16 +36,26 @@ module CMDB
     end
 
     # Set a single key in consul. If value is nil, then delete the key
-    # entirely from consul.
+    # entirely from consul. If this source cannot accept the write due to
+    # key name limitations, return nil.
     #
+    # @return [true,nil]
     # @param [String] key dot-notation key
     # @param [Object] value new value of key
+    # @raise [CMDB:Error] if the write fails atthe consul server
     def set(key, value)
+      return nil unless prefixed?(key)
       key = dot_to_slash(key)
       if value.nil?
-        http_delete path_to(key)
+        status = http_delete path_to(key)
       else
-        http_put path_to(key), value
+        status = http_put path_to(key), value
+      end
+
+      if status >= 200 && status < 300
+        true
+      else
+        raise CMDB::Error.new("Consul put/delete failed with status #{status}")
       end
     end
 
@@ -64,6 +77,7 @@ module CMDB
 
       result.each do |item|
         key = slash_to_dot(item['Key'])
+        key.sub(@useless,'')
         next unless item['Value']
         value = json_parse(Base64.decode64(item['Value']))
         yield(key, value)
@@ -88,6 +102,15 @@ module CMDB
     # @param [String] subpath key path relative to base
     def path_to(subpath)
       ::File.join('/v1/kv/', @uri.path, subpath)
+    end
+
+    # Transform a subpath into a key name. Account for base-path prefix if
+    # necessary.
+    def slash_to_dot(path)
+      dot = super
+      dot.sub!(@useless,'')
+      dot=dot[1..-1] if dot[0] == '.'
+      dot
     end
   end
 end

@@ -65,7 +65,7 @@ module CMDB::Shell
 
     def cd(path)
       pwd = @shell.expand_path(path)
-      @shell.pwd = pwd.split(::CMDB::SEPARATOR)
+      @shell.pwd = CMDB.split(pwd)
       pwd.to_sym
     end
     alias chdir cd

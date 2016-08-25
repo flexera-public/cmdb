@@ -20,23 +20,48 @@ describe CMDB::Source::Consul do
   before do
     stub_request(:get, 'http://localhost:8500/v1/kv/common/?recurse').
       to_return(:status => 200, :body =>
-        consul('foo/bar' => 'foobar', 'baz' => '[1,2,3]', 'quux' => 'true'))
+        consul('common/foo/bar' => 'foobar', 'common/baz' => '[1,2,3]', 'common/quux' => 'true'))
     stub_request(:get, 'http://localhost:8500/v1/kv/common/foo/bar').
-      to_return(:status => 200, :body => consul('foo/bar' => 'foobar'))
+      to_return(:status => 200, :body => consul('common/foo/bar' => 'foobar'))
     stub_request(:get, 'http://localhost:8500/v1/kv/common/baz').
-      to_return(:status => 200, :body => consul('baz' => '[1,2,3]'))
+      to_return(:status => 200, :body => consul('common/baz' => '[1,2,3]'))
     stub_request(:get, 'http://localhost:8500/v1/kv/common/quux').
-      to_return(:status => 200, :body => consul('quux' => 'true'))
+      to_return(:status => 200, :body => consul('common/quux' => 'true'))
 
-    stub_request(:put, "http://localhost:8500/v1/kv/common/i_like_cheese").
+    stub_request(:put, 'http://localhost:8500/v1/kv/common/i_like_cheese').
       to_return(:status => 200, :body => 'true')
     stub_request(:get, 'http://localhost:8500/v1/kv/common/i_like_cheese').
-      to_return(:status => 200, :body => consul('i_like_cheese' => 'true'))
+      to_return(:status => 200, :body => consul('common/i_like_cheese' => 'true'))
   end
 
   it_behaves_like 'a source'
 
   it_behaves_like 'a settable source'
+
+  describe '#each_pair' do
+    context 'given a deeply nested base path' do
+      let(:prefix) { 'common' }
+      let(:uri) { URI.parse('consul://localhost/world/continent/country/common') }
+      subject { described_class.new(uri, prefix) }
+
+      before do
+        stub_request(:get, 'http://localhost:8500/v1/kv/world/continent/country/common/foo/bar').
+          to_return(:status => 200, :body =>
+            consul('world/continent/country/common/foo/bar' => 'foobar'))
+        stub_request(:get, 'http://localhost:8500/v1/kv/world/continent/country/common/?recurse').
+          to_return(:status => 200, :body =>
+            consul('world/continent/country/common/foo/bar' => 'foobar'))
+      end
+
+      it 'uses the prefix alone for key names' do
+        expect(subject.get('common.foo.bar')).to eq('foobar')
+
+        values = {}
+        subject.each_pair { |k, v| values[k] = v }
+        expect(values).to eq('common.foo.bar' => 'foobar')
+      end
+    end
+  end
 
   describe '#path_to' do
     let(:prefix) { nil }

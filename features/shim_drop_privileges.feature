@@ -7,7 +7,7 @@ Feature: shim drop privileges using setuid
     Given RACK_ENV is "production"
 
   Scenario: run normally
-    When I Commands::Shim without "user:"
+    When I run Commands::Shim without "user:"
     Then the command should not setuid
     And the command should succeed
 
