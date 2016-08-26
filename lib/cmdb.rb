@@ -127,17 +127,17 @@ module CMDB
 
   module_function
 
-  # Split a dotted-notation CMDB key into its constituent parts and return an
+  # Split a dot-notation CMDB key into its constituent parts and return an
   # Array. Optionally limit the amount of splitting done by passing parts > 0.
   #
   # @return [Array]
-  # @param [String] key dotted-notation key
+  # @param [String] key dot-notation key
   # @param [Integer] parts number of total parts to return
   def split(key, parts=0)
     key.split(SEPARATOR, parts)
   end
 
-  # Transform a list of key components into a dotted-notation key.
+  # Transform a list of key components into a dot-notation key.
   #
   # @return [String]
   def join(*pieces)

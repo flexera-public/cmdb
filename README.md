@@ -17,39 +17,46 @@ Maintained by
 
 ## Why should I use this gem?
 
-CMDB supports two primary use cases:
+With CMDB, you can:
 
   1. Decouple your modern (12-factor) application from the CM mechanism that is used to deploy it,
      transforming CMDB keys and values into the enviroment variables that your app expects.
   2. Deploy legacy applications that expect their configuration to be
      written to disk files by rewriting files at app-load time, substituting
      CMDB variables into the files as required.
+  3. Explore your CMDB contents from the command line using a beautiful shell.
 
 CMDB has three primary interfaces:
 
   1. The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
      config files, then spawns your application.
-  2. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_env`
+  2. The `cmdb shell` command navigates your k/v store using filesystem-like
+     metaphors (`ls`, `cd`, and so forth) with color output and tab completion
+  3. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_env`
      method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
      environment yourself, without using the shim.
-  3. The `cmdb shell` command navigates your k/v store using filesystem-like
-  metaphors (`ls`, `cd`, and so forth)   
 
 # Data Model
 
-CMDB models all data sources as hierarchical trees whose nodes are named, and
-whose leaf nodes can contain a piece of data: strings, numbers, booleans, or
-lists are all supported data types. Maps are disallowed on order to prevent
-ambiguity; a map always represents a subtree of the k/v store, never a value.
+CMDB models all data sources as trees whose nodes are named, and whose leaf
+nodes can contain a piece of data: strings, numbers, booleans, or arrays.
 
-This model is a "least common denominator" simplification of the data models of
-YML, JSON, ZooKeeper and etcd; by disallowing maps as the values of keys, it
-avoids ambiguity over whether a map should be treated as a subtree or as a
-distinct value.
+Maps are disallowed on order to prevent ambiguity; a map always represents a
+subtree of the k/v store, never a value. Mixed-type arrays are disallowed
+because they can cause problems with strongly-typed languages. Nil is
+disallowed as a value because writing nil means "delete the key."
+
+Paths within a tree -- and therefore CMDB keys -- are identified using a dot
+notation similar to Java properties; for instance, `production.http.listen_port`
+might be an Integer-valued key that tells your microservice which HTTP port
+to listen on in the production environment; `production.database.host` might be
+the database host, and so forth. The names of keys are determined by the tree
+structure of your k/v store, and when you set a key through CMDB, its position
+in the tree is derived from its key name.
 
 ## Source Prefixes
 
-Some CMDB sources have a `prefix`, indicating that _all_ keys contained in
+CMDB sources have a `prefix`, meaning that _all_ keys contained in
 that source begin with the same prefix. No two sources may share a prefix,
 ensuring that sources don't "hide" each others' data. The prefix of a source is
 usually automatically determined by the final component of its URL, e.g. the
@@ -63,7 +70,7 @@ disjoint; there is no such thing as "inheritance" in the CMDB data model.
 
 When keys are exported to the environment, the prefix is stripped from the
 key name; however, CMDB _still_ prevents overlap in this case.
- 
+
 Inheritance may be supported in future as an optional behavior, but is omitted
 for the time being because in practice, it causes more problems than it solves.
 
@@ -135,13 +142,13 @@ Examples:
     use this source with the `myapp` source in the example above!)
 
 If no sources are specified on the command line, CMDB will run an auto-detect
-algorithm to check for network agents listening at localhost. 
+algorithm to check for network agents listening at localhost.
 
 To learn more about sources and prefixes, see "Data model," below.
 
 ## Invoke the CMDB Shell
 
-To enter an interactive sh-like shell, just type `cmdb shell`. 
+To enter an interactive sh-like shell, just type `cmdb shell`.
 
 ## Invoke the CMDB Shim
 
@@ -181,7 +188,7 @@ found, it substitutes the corresponding CMDB key's value.
 
 Replacement tokens look like this: `<<name.of.my.key>>` and can appear anywhere in a file as a YAML
 or JSON _value_ (but never a key). Unlike environment variables, replacement tokens always use
-the fully-qualified key name, including prefix. 
+the fully-qualified key name, including prefix.
 
 Replacement tokens should appear inside string literals in your configuration files so they don't
 invalidate syntax or render the files unparsable by other tools.

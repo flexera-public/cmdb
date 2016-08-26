@@ -99,7 +99,7 @@ module CMDB
     end
 
     # Convert dotted notation to slash-separated notation without an initial
-    # slash. Remove prefix if it is present in the dotted-notation key.
+    # slash. Remove prefix if it is present in the dot-notation key.
     def dot_to_slash(key)
       pieces = CMDB.split(key)
       pieces.shift if pieces[0] == @prefix

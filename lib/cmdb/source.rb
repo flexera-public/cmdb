@@ -100,7 +100,7 @@ module CMDB
     # that we place on certain object types.
     #
     # @return [Object] always returns value (unless it raises)
-    # @param [String] dotted-notation key, used to describe errors
+    # @param [String] dot-notation key, used to describe errors
     # @param [Object] value
     # @raise [BadValue] if the value is bad
     def validate!(key, value)
