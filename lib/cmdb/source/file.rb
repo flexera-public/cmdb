@@ -38,13 +38,18 @@ module CMDB
 
       @data = {}
       flatten(raw_data, @prefix, @data)
+
+      # File sources are static; we can check them for data errors at load
+      # time. Do this by each'ing, which validates values as a side effect.
+      each_pair { |_,_| }
     end
 
     # Get the value of key.
     #
     # @return [Object] the key's value, or nil if not found
     def get(key)
-      @data[key]
+      value = @data[key]
+      validate!(key, value)
     end
 
     # Enumerate the keys and values in this source.
@@ -53,7 +58,10 @@ module CMDB
     # @yieldparam [String] key
     # @yieldparam [Object] value
     def each_pair(&_block)
-      @data.each_pair { |k, v| yield(k, v) }
+      @data.each_pair do |key, value|
+        validate!(key, value)
+        yield(key, value)
+      end
     end
 
     private
@@ -64,24 +72,8 @@ module CMDB
         case value
         when Hash
           flatten(value, key, output)
-        when Array
-          if value.any? { |e| e.is_a?(Hash) }
-            # mismatched arrays: not allowed
-            raise BadValue.new(uri, key, value, 'hashes not allowed inside arrays')
-          elsif value.all? { |e| e.is_a?(String) } ||
-             value.all? { |e| e.is_a?(Numeric) } ||
-             value.all? { |e| e == true } ||
-             value.all? { |e| e == false }
-            output[key] = value
-          else
-            # mismatched arrays: not allowed
-            raise BadValue.new(uri, key, value, 'mismatched/unsupported element types')
-          end
-        when String, Numeric, TrueClass, FalseClass
-          output[key] = value
         else
-          # nil and anything else: not allowed
-          raise BadValue.new(uri, key, value)
+          output[key] = value
         end
       end
     end

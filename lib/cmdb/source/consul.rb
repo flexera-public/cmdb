@@ -27,7 +27,8 @@ module CMDB
       when String
         response = json_parse(response)
         item = response.first
-        item['Value'] && json_parse(Base64.decode64(item['Value']))
+        item['Value'] && value = json_parse(Base64.decode64(item['Value']))
+        validate!(key, value)
       when 404
         nil
       else
@@ -49,6 +50,7 @@ module CMDB
       if value.nil?
         status = http_delete path_to(key)
       else
+        validate!(key, value)
         status = http_put path_to(key), value
       end
 
@@ -80,6 +82,7 @@ module CMDB
         key.sub(@useless,'')
         next unless item['Value']
         value = json_parse(Base64.decode64(item['Value']))
+        validate!(key, value)
         yield(key, value)
       end
 

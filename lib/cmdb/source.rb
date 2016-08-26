@@ -95,6 +95,33 @@ module CMDB
     def prefixed?(key)
       prefix.nil? || (key.index(prefix) == 0 && key[prefix.size] == '.')
     end
+
+    # Check whether a CMDB value conforms to the extra-strict constraints
+    # that we place on certain object types.
+    #
+    # @return [Object] always returns value (unless it raises)
+    # @param [String] dotted-notation key, used to describe errors
+    # @param [Object] value
+    # @raise [BadValue] if the value is bad
+    def validate!(key, value)
+      case value
+      when Array
+        if value.any? { |e| e.is_a?(Hash) }
+          raise BadValue.new(uri, key, value, 'hashes not allowed inside arrays')
+        elsif value.all? { |e| e.is_a?(String) } ||
+          value.all? { |e| e.is_a?(Numeric) } ||
+          value.all? { |e| e == true } ||
+          value.all? { |e| e == false }
+          value
+        else
+          raise BadValue.new(uri, key, value, 'mismatched or disallowed element types')
+        end
+      when String, Numeric, TrueClass, FalseClass, NilClass
+          value
+      else
+        raise BadValue.new(uri, key, value)
+      end
+    end
   end
 end
 
