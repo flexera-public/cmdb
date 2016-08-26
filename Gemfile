@@ -4,11 +4,12 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'rake'
-gem 'backticks'
-gem 'cucumber'
-gem 'rspec'
 
 group :test do
+  gem 'backticks', '1.0.0rc1'
+  gem 'docker-compose', '1.0.0rc2'
+  gem 'cucumber'
+  gem 'rspec'
   gem 'rubocop'
   gem 'webmock'
 end

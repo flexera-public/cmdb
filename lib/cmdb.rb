@@ -1,16 +1,17 @@
 # encoding: utf-8
+require 'logger'
 require 'set'
 require 'singleton'
 
 module CMDB
-  # Values of RACK_ENV/RAILS_ENV that are considered to be "development," which relaxes
-  # certain runtime sanity checks.
-  DEVELOPMENT_ENVIRONMENTS = [nil, 'development', 'test'].freeze
+  # Character that separates keys from subkeys in the standard notation for
+  # CMDB keys.
+  SEPARATOR = '.'.freeze
 
   # Regexp that matches valid key names. Key names consist of one or more dot-separated words;
   # each word must begin with a lowercase alpha character and may contain alphanumerics or
   # underscores.
-  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/
+  VALID_KEY = /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$/i.freeze
 
   class Error < StandardError; end
 
@@ -26,46 +27,58 @@ module CMDB
     end
   end
 
-  # Client asked for an invalid or malformed key name.
+  # Client used a malformed key name.
   class BadKey < Error
     # @return [String] the name of the offending key
     attr_reader :key
 
     # @param [String] name
-    def initialize(key)
+    def initialize(key, message="Malformed key '#{key}'")
+      super(message)
       @key = key
-      super("Malformed key '#{key}'")
     end
   end
 
-  # A value of an unsupported type was encountered in the CMDB.
+  # A value of an unsupported type was encountered in the CMDB or filesystem.
   class BadValue < Error
-    # @return [URI] filesystem or network location of the bad value
-    attr_reader :url
+    # @return [URI] source that contains the bad data
+    attr_reader :uri
 
     # @return [String] the name of the key that contained the bad value
     attr_reader :key
 
-    # @param [URI] url filesystem or network location of the bad value
+    # @param [URI] source that contains the bad value
     # @param [String] key CMDB key name under which the bad value was found
     # @param [Object] value the bad value itself
-    def initialize(url, key, value)
-      @url = url
+    def initialize(uri, key, value, desc=nil)
+      @uri = uri
       @key = key
-      super("Values of type #{value.class.name} are unsupported")
+      msg = "Unsupported #{value.class.name} value"
+      msg << ": #{desc}" if desc
+      super(msg)
     end
   end
 
-  # Malformed data was encountered in the CMDB or in an app's filesystem.
+  # Malformed data was encountered in the CMDB or filesystem.
   class BadData < Error
-    # @return [URI] filesystem or network location of the bad data
-    attr_reader :url
+    # @return [URI] source that contains the bad data
+    attr_reader :uri
 
-    # @param [URI] url filesystem or network location of the bad value
+    # @param [URI] source that contains the bad value
     # @param [String] context brief description of where data was found e.g. 'CMDB data file' or 'input config file'
-    def initialize(url, context = nil)
-      @url = url
+    def initialize(uri, context = nil)
+      @uri = uri
       super("Malformed data encountered #{(' in ' + context) if context}")
+    end
+  end
+
+  # Client asked to do something that does not make sense.
+  class BadCommand < Error
+    attr_reader :command
+
+    def initialize(command, message='Unrecognized command')
+      super(message)
+      @command = command
     end
   end
 
@@ -83,8 +96,8 @@ module CMDB
   # Deprecated name for ValueConflict
   Conflict = ValueConflict
 
-  # Two or more keys in different namespaces have an identical name. This isn't an error
-  # when CMDB is used to refer to keys by their full, qualified name, but it can become
+  # Two or more keys in prefixed sources have an identical name. This isn't an error
+  # when CMDB is used to refer to keys by their full, prefixed name, but it can become
   # an issue when loading keys into the environment for 12-factor apps to process.
   class NameConflict < Error
     attr_reader :env
@@ -114,9 +127,32 @@ module CMDB
 
   module_function
 
+  # Split a dot-notation CMDB key into its constituent parts and return an
+  # Array. Optionally limit the amount of splitting done by passing parts > 0.
+  #
+  # @return [Array]
+  # @param [String] key dot-notation key
+  # @param [Integer] parts number of total parts to return
+  def split(key, parts=0)
+    key.split(SEPARATOR, parts)
+  end
+
+  # Transform a list of key components into a dot-notation key.
+  #
+  # @return [String]
+  def join(*pieces)
+    pieces.flatten!
+    pieces.join(SEPARATOR)
+  end
+
   def log
     unless @log
-      @log = Logger.new(STDOUT)
+      @log = Logger.new($stderr)
+
+      @log.formatter = Proc.new do |severity, datetime, progname, msg|
+        "#{severity}: #{msg}\n"
+      end
+
       @log.level = Logger::WARN
     end
 
@@ -126,16 +162,9 @@ module CMDB
   def log=(log)
     @log = log
   end
-
-  # Determine whether CMDB is running in a development environment.
-  # @return [Boolean]
-  def development?
-    DEVELOPMENT_ENVIRONMENTS.include?(ENV['RACK_ENV'] || ENV['RAILS_ENV'])
-  end
 end
 
-require 'cmdb/consul_source'
-require 'cmdb/file_source'
+require 'cmdb/source'
 require 'cmdb/interface'
 require 'cmdb/rewriter'
 require 'cmdb/commands'

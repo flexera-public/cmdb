@@ -20,4 +20,4 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'cmdb'
 
-require_relative 'shared_examples'
+require_relative 'source/shared_examples'

@@ -1,4 +1,5 @@
 # encoding: utf-8
+
 Then /^<<([^>]*)>> should be nil$/ do |key|
   cmdb.get(key).should be_nil
 end

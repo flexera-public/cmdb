@@ -1,9 +1,7 @@
 PATH
   remote: .
   specs:
-    cmdb (2.6.2)
-      diplomat (~> 0.15)
-      listen (~> 3.0)
+    cmdb (3.0.0)
       trollop (~> 2.0)
 
 GEM
@@ -11,7 +9,7 @@ GEM
   specs:
     addressable (2.4.0)
     ast (2.2.0)
-    backticks (0.4.0)
+    backticks (1.0.0rc1)
     builder (3.2.2)
     byebug (8.2.2)
     coderay (1.1.1)
@@ -29,22 +27,13 @@ GEM
       gherkin (~> 3.2.0)
     cucumber-wire (0.0.1)
     diff-lcs (1.2.5)
-    diplomat (0.15.0)
-      faraday (~> 0.9)
-      json (~> 1.8)
-    faraday (0.9.2)
-      multipart-post (>= 1.2, < 3)
-    ffi (1.9.10)
+    docker-compose (1.0.0rc2)
+      backticks (>= 1.0.0rc1)
     gherkin (3.2.0)
     hashdiff (0.3.0)
-    json (1.8.3)
-    listen (3.0.6)
-      rb-fsevent (>= 0.9.3)
-      rb-inotify (>= 0.9.7)
     method_source (0.8.2)
     multi_json (1.11.2)
     multi_test (0.1.2)
-    multipart-post (2.0.0)
     parser (2.3.0.6)
       ast (~> 2.2)
     powerpack (0.1.1)
@@ -57,9 +46,6 @@ GEM
       pry (~> 0.10)
     rainbow (2.1.0)
     rake (10.5.0)
-    rb-fsevent (0.9.7)
-    rb-inotify (0.9.7)
-      ffi (>= 0.5.0)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -94,10 +80,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  backticks
+  backticks (= 1.0.0rc1)
   bundler (~> 1.10)
   cmdb!
   cucumber
+  docker-compose (= 1.0.0rc2)
   pry
   pry-byebug
   rake

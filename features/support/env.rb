@@ -37,14 +37,6 @@ module FakeAppHelper
     @app_env ||= {}
   end
 
-  def fake_var_lib
-    fake_path('var', 'lib', 'cmdb')
-  end
-
-  def fake_home
-    fake_path('home')
-  end
-
   def fake_path(*args)
     path = fake_root
     until args.empty?
@@ -71,9 +63,9 @@ module FakeAppHelper
       Cucumber.logger.debug("bash> #{cmd}\n")
       Bundler.with_clean_env do
         runner = Backticks::Runner.new(interactive: true)
-        command = runner.command(cmd)
+        command = runner.run(cmd)
         command.join
-        $CHILD_STATUS.success?.should == true unless ignore_errors
+        command.status.success?.should == true unless ignore_errors
         command.captured_output
       end
     end
@@ -81,8 +73,15 @@ module FakeAppHelper
 end
 
 module ScenarioState
+  def sources
+    @sources ||= []
+  end
+
   def cmdb
-    @cmdb ||= CMDB::Interface.new
+    expect(@sources).not_to be_nil
+    expect(@sources).not_to be_empty
+    sources = @sources.map { |s| CMDB::Source.create s }
+    @cmdb ||= CMDB::Interface.new(*sources)
   end
 end
 
@@ -99,15 +98,8 @@ Before do |scenario|
 
   @original_env = {}
   ENV.each_pair { |k, v| @original_env[k] = v }
-  @old_dirs = CMDB::FileSource.base_directories
 
   ENV['RACK_ENV'] = nil
-  ENV['HOME'] = fake_home
-  CMDB::FileSource.base_directories = [
-    fake_var_lib,
-    File.join(fake_home, '.cmdb')
-  ]
-
   FileUtils.mkdir_p(app_path('config'))
 
   # ensure that shim et al see PWD as app root
@@ -124,9 +116,6 @@ After do |scenario|
   ENV.keys.each { |k| ENV[k] = nil }
   @original_env.each_pair { |k, v| ENV[k] = v }
 
-  CMDB::FileSource.base_directories = @old_dirs
-  FileUtils.rm_rf(fake_var_lib) if File.directory?(fake_var_lib)
-  FileUtils.rm_rf(fake_home) if File.directory?(fake_home)
   FileUtils.rm_rf(app_path('config'))
 
   # Make sure we shut down the shim process (and hopefully any child processes)
@@ -135,18 +124,19 @@ After do |scenario|
 
     begin
       Process.kill('QUIT', @shim_command.pid)
-      @shim_command.join
     rescue
       Cucumber.logger.debug("shim is already dead (#{$ERROR_INFO})\n")
     end
 
-    if scenario.failed?
+    @shim_command.join
+
+    # if scenario.failed?
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
       text = @shim_command.captured_output + @shim_command.captured_error
       text.split(/[\n\r]+/).each do |line|
         Cucumber.logger.debug("!!! #{line}\n")
       end
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-    end
+    # end
   end
 end
