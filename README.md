@@ -1,7 +1,6 @@
 # CMDB
 
-[![TravisCI][travis_ci_img]](https://travis-ci.org/rightscale/cmdb)
-[travis_ci_img]: https://travis-ci.org/rightscale/cmdb.svg?branch=master
+[![TravisCI](https://travis-ci.org/rightscale/cmdb.svg?branch=master)](https://travis-ci.org/rightscale/cmdb) [![Coverage](https://coveralls.io/repos/github/rightscale/cmdb/badge.svg?branch=master)](https://coveralls.io/github/rightscale/cmdb?branch=master)
 
 CMDB is a Ruby interface for consuming data from one or more configuration management databases
 (CMDBs) and making that information available to Web applications.
@@ -35,73 +34,6 @@ CMDB has three primary interfaces:
   3. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_env`
      method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
      environment yourself, without using the shim.
-
-# Data Model
-
-CMDB models all data sources as trees whose nodes are named, and whose leaf
-nodes can contain a piece of data: strings, numbers, booleans, or arrays.
-
-Maps are disallowed on order to prevent ambiguity; a map always represents a
-subtree of the k/v store, never a value. Mixed-type arrays are disallowed
-because they can cause problems with strongly-typed languages. Nil is
-disallowed as a value because writing nil means "delete the key."
-
-Paths within a tree -- and therefore CMDB keys -- are identified using a dot
-notation similar to Java properties; for instance, `production.http.listen_port`
-might be an Integer-valued key that tells your microservice which HTTP port
-to listen on in the production environment; `production.database.host` might be
-the database host, and so forth. The names of keys are determined by the tree
-structure of your k/v store, and when you set a key through CMDB, its position
-in the tree is derived from its key name.
-
-## Source Prefixes
-
-CMDB sources have a `prefix`, meaning that _all_ keys contained in
-that source begin with the same prefix. No two sources may share a prefix,
-ensuring that sources don't "hide" each others' data. The prefix of a source is
-usually automatically determined by the final component of its URL, e.g. the
-filename in the case of `file://` sources and the final path component in the
-case of `consul://` or other network sources.
-
-## Inheritance
-
-The uniqueness constraint on prefixes means that all sources' keys are
-disjoint; there is no such thing as "inheritance" in the CMDB data model.
-
-When keys are exported to the environment, the prefix is stripped from the
-key name; however, CMDB _still_ prevents overlap in this case.
-
-Inheritance may be supported in future as an optional behavior, but is omitted
-for the time being because in practice, it causes more problems than it solves.
-
-## Ambiguous Key Names
-
-Consider a file that defines the following variables:
-
-    # confusing.yml
-    this:
-      is:
-        ambiguous
-      was:
-        very: ambiguous
-        extremely: confusing
-
-At first glance, ths file defines two CMDB keys:
-  - `confusing.this.is` (a string)
-  - `confusing.this.was` (a map)
-
-However, an equally valid interpretation would be:
-  - `confusing.this.is`
-  - `confusing.this.was.very`
-  - `confusing.this.was.extremely`
-
-Because CMDB keys cannot contain maps, the first interpretation is wrong. The second
-interpretation is valid according to the data model, but results in a situation where the type
-of the keys could change if the structure of the YML file changes.
-
-For this reason, any YAML file that defines an "ambiguous" key name will cause an error at
-initialization time. To avoid ambiguous key names, think of your YAML file as a tree and remember
-that _leaf nodes must define data_ and _internal nodes must define structure_.
 
 # Getting Started
 
@@ -247,3 +179,70 @@ located in `/var/lib/cmdb` and present it as a source whose prefix is `mykeys`.
 JSON and YAML files are both supported. The structured data within each file
 can contain arbitrarily-deep subtrees which are interpreted as subkeys,
 sub-subkeys and so forth.
+
+# Data Model
+
+CMDB models all data sources as trees whose nodes are named, and whose leaf
+nodes can contain a piece of data: strings, numbers, booleans, or arrays.
+
+Maps are disallowed on order to prevent ambiguity; a map always represents a
+subtree of the k/v store, never a value. Mixed-type arrays are disallowed
+because they can cause problems with strongly-typed languages. Nil is
+disallowed as a value because writing nil means "delete the key."
+
+Paths within a tree -- and therefore CMDB keys -- are identified using a dot
+notation similar to Java properties; for instance, `production.http.listen_port`
+might be an Integer-valued key that tells your microservice which HTTP port
+to listen on in the production environment; `production.database.host` might be
+the database host, and so forth. The names of keys are determined by the tree
+structure of your k/v store, and when you set a key through CMDB, its position
+in the tree is derived from its key name.
+
+## Source Prefixes
+
+CMDB sources have a `prefix`, meaning that _all_ keys contained in
+that source begin with the same prefix. No two sources may share a prefix,
+ensuring that sources don't "hide" each others' data. The prefix of a source is
+usually automatically determined by the final component of its URL, e.g. the
+filename in the case of `file://` sources and the final path component in the
+case of `consul://` or other network sources.
+
+## Inheritance
+
+The uniqueness constraint on prefixes means that all sources' keys are
+disjoint; there is no such thing as "inheritance" in the CMDB data model.
+
+When keys are exported to the environment, the prefix is stripped from the
+key name; however, CMDB _still_ prevents overlap in this case.
+
+Inheritance may be supported in future as an optional behavior, but is omitted
+for the time being because in practice, it causes more problems than it solves.
+
+## Ambiguous Key Names
+
+Consider a file that defines the following variables:
+
+    # confusing.yml
+    this:
+      is:
+        ambiguous
+      was:
+        very: ambiguous
+        extremely: confusing
+
+At first glance, ths file defines two CMDB keys:
+  - `confusing.this.is` (a string)
+  - `confusing.this.was` (a map)
+
+However, an equally valid interpretation would be:
+  - `confusing.this.is`
+  - `confusing.this.was.very`
+  - `confusing.this.was.extremely`
+
+Because CMDB keys cannot contain maps, the first interpretation is wrong. The second
+interpretation is valid according to the data model, but results in a situation where the type
+of the keys could change if the structure of the YML file changes.
+
+For this reason, any YAML file that defines an "ambiguous" key name will cause an error at
+initialization time. To avoid ambiguous key names, think of your YAML file as a tree and remember
+that _leaf nodes must define data_ and _internal nodes must define structure_.
