@@ -1,8 +1,21 @@
 # encoding: utf-8
 
-# Create a source with the specified URL.
+require 'docker/compose'
+
+# Create a source with the specified URL. Perform docker-compose mapping for
+# sources that
 Given /^a source "([^"]+)"$/ do |uri|
-  sources << URI.parse(uri)
+  uri = URI.parse(uri)
+  case uri.scheme
+  when 'consul'
+    s = Docker::Compose::Session.new(dir: File.expand_path('../../..', __FILE__))
+    m = Docker::Compose::Mapper.new(s)
+    uri.host = 'consul' # rude! user's hostname/port do not matter...
+    uri.port = 8500
+    uri = m.map(uri.to_s)
+  end
+
+  sources << CMDB::Source.create(uri)
 end
 
 # Given an "absolute" path name, write a file. The path is actually appended
