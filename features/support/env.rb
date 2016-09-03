@@ -14,6 +14,9 @@ STDOUT.sync = STDERR.sync = true
 lib_dir = File.expand_path('../../../lib', __FILE__)
 $LOAD_PATH << lib_dir unless $LOAD_PATH.include?(lib_dir)
 
+require 'coveralls'
+Coveralls.wear_merged!
+
 require 'cmdb'
 
 module FakeAppHelper
@@ -82,7 +85,8 @@ module ScenarioState
   end
 
   def cmdb
-    @cmdb ||= CMDB::Interface.new(*sources)
+    ss = sources.map { |s| CMDB::Source.create(s) }
+    @cmdb ||= CMDB::Interface.new(*ss)
   end
 end
 

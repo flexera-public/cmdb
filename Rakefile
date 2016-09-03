@@ -14,7 +14,10 @@ require 'rspec/core'
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec)
 
-task default: [:spec, :cucumber]
+require 'coveralls/rake/task'
+Coveralls::RakeTask.new
+
+task default: [:spec, :cucumber, 'coveralls:push']
 
 
 require 'docker/compose'

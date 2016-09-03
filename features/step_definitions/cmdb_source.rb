@@ -15,7 +15,7 @@ Given /^a source "([^"]+)"$/ do |uri|
     uri = m.map(uri.to_s)
   end
 
-  sources << CMDB::Source.create(uri)
+  sources << uri
 end
 
 # Given an "absolute" path name, write a file. The path is actually appended
