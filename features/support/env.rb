@@ -14,6 +14,9 @@ STDOUT.sync = STDERR.sync = true
 lib_dir = File.expand_path('../../../lib', __FILE__)
 $LOAD_PATH << lib_dir unless $LOAD_PATH.include?(lib_dir)
 
+require 'coveralls'
+Coveralls.wear_merged!
+
 require 'cmdb'
 
 module FakeAppHelper
@@ -77,11 +80,13 @@ module ScenarioState
     @sources ||= []
   end
 
+  def docker_compose
+    @docker_compose ||= Docker::Compose::Session.new(dir: File.expand_path('../../..', __FILE__))
+  end
+
   def cmdb
-    expect(@sources).not_to be_nil
-    expect(@sources).not_to be_empty
-    sources = @sources.map { |s| CMDB::Source.create s }
-    @cmdb ||= CMDB::Interface.new(*sources)
+    ss = sources.map { |s| CMDB::Source.create(s) }
+    @cmdb ||= CMDB::Interface.new(*ss)
   end
 end
 
@@ -138,5 +143,16 @@ After do |scenario|
       end
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
     # end
+  end
+
+  # Reset consul k/v for clean slate
+  if @consul_started
+    m = Docker::Compose::Mapper.new(docker_compose)
+    uri = m.map('consul://consul:8500')
+
+    CMDB::Source.create(uri).instance_eval do
+      path = '/v1/kv'
+      http_delete path, query:'recurse'
+    end
   end
 end

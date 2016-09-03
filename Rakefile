@@ -14,7 +14,10 @@ require 'rspec/core'
 require 'rspec/core/rake_task'
 RSpec::Core::RakeTask.new(:spec)
 
-task default: [:spec, :cucumber]
+require 'coveralls/rake/task'
+Coveralls::RakeTask.new
+
+task default: [:spec, :cucumber, 'coveralls:push']
 
 
 require 'docker/compose'
@@ -25,7 +28,5 @@ task :sandbox do
   mapper = Docker::Compose::Mapper.new(compose)
   source1 = mapper.map('consul://consul:8500/sandbox/apples')
   source2 = mapper.map('consul://consul:8500/sandbox/oranges')
-
-  lib = File.expand_path('../lib', __FILE__)
   exec "bin/shell --source=#{source1} --source=#{source2}"
 end

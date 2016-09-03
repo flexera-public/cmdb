@@ -74,10 +74,11 @@ module CMDB
     #
     # @return [Integer] HTTP status code
     # @param [String] path
-    def http_delete(path)
+    def http_delete(path, query:nil)
       @http ||= Net::HTTP.start(@http_url.host, @http_url.port)
       url = @http_url.dup
       url.path = path
+      url.query = query unless query.nil? || query.empty?
 
       request = Net::HTTP::Delete.new url
       response = @http.request request

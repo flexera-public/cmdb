@@ -12,6 +12,7 @@ group :test do
   gem 'rspec'
   gem 'rubocop'
   gem 'webmock'
+  gem 'coveralls', require: false
 end
 
 group :development do

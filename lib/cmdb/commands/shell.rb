@@ -103,12 +103,18 @@ cmdb shell
           words = line.split(/\s+/)
           command, args = words.first.to_sym, words[1..-1]
 
-          run_ruby(command, args) || run_getter(line) || run_setter(line) ||
-            fail(CMDB::BadCommand.new(command))
+          exception = nil
+          begin
+            run_ruby(command, args)
+          rescue CMDB::BadCommand => e
+            exception = e
+          end
+
+          # deferred raise after trying getter and setter shortcuts
+          raise exception if exception && !(run_setter(line) || run_getter(line))
+
           handle_output(self._)
-        rescue SystemCallError => e
-          handle_error(e) || raise
-        rescue => e
+        rescue StandardError, SystemCallError => e
           handle_error(e) || raise
         end
       end
@@ -120,10 +126,8 @@ cmdb shell
     def run_ruby(command, args)
       self._ = @dsl.__send__(command, *args)
       true
-    rescue CMDB::BadCommand
-      false
-    rescue ArgumentError => e
-      raise CMDB::BadCommand.new(e.message, command)
+    rescue ArgumentError, NoMethodError => e
+      raise CMDB::BadCommand.new(command, e.message)
     end
 
     # @return [Boolean] true if line was handled as a getter
