@@ -14,10 +14,6 @@ module CMDB::Shell
       DSL
     end
 
-    def method_missing(meth, *args)
-      ::Kernel.raise ::CMDB::BadCommand.new(meth)
-    end
-
     def ls(path='')
       prefix = @shell.expand_path(path)
       @cmdb.search prefix
@@ -54,18 +50,19 @@ module CMDB::Shell
       if @cmdb.set(key, value)
         @cmdb.get(key)
       else
-        ::Kernel.raise ::CMDB::BadCommand.new('set', 'No source is capable of accepting writes')
+        ::Kernel.raise ::CMDB::BadCommand.new('set', "No source accepts writes for '#{::CMDB.split(key).first}'")
       end
     end
 
     def unset(key)
       @cmdb.set(key, nil)
+      @cmdb.get(key)
     end
     alias rm unset
 
     def cd(path)
       pwd = @shell.expand_path(path)
-      @shell.pwd = CMDB.split(pwd)
+      @shell.pwd = ::CMDB.split(pwd)
       pwd.to_sym
     end
     alias chdir cd
