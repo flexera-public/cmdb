@@ -18,19 +18,16 @@ Maintained by
 
 With CMDB, you can:
 
-  1. Decouple your modern (12-factor) application from the CM mechanism that is used to deploy it,
-     transforming CMDB keys and values into the enviroment variables that your app expects.
-  2. Deploy legacy applications that expect their configuration to be
-     written to disk files by rewriting files at app-load time, substituting
-     CMDB variables into the files as required.
-  3. Explore your CMDB contents from the command line using a beautiful shell.
+  1. Decouple your modern (12-factor) application from the CM tools used to deploy it
+  2. Deploy legacy applications by rewriting config files at app-load time
+  3. Interact with your CMDB using a beautiful shell
 
 CMDB has three primary interfaces:
 
-  1. The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
-     config files, then spawns your application.
-  2. The `cmdb shell` command navigates your k/v store using filesystem-like
+  1. The `cmdb shell` command navigates your k/v store using filesystem-like
      metaphors (`ls`, `cd`, and so forth) with color output and tab completion
+  2. The `cmdb shim` command populates the environment with values and/or rewrites hardcoded
+     config files, then spawns your application.
   3. The `CMDB::Interface` object provides a programmatic API for querying CMDBs. Its `#to_env`
      method transforms the whole configuration into an environment-friendly hash if you prefer to seed the
      environment yourself, without using the shim.
@@ -46,14 +43,6 @@ before the subcommand name.
 You can add as many sources as you'd like. All sources are specified as a URI,
 where the scheme tells CMDB which driver to use and how to interpret the rest
 of the URI.
-
-
-
-Sources can optionally have a "prefix" which is used as a common prefix of all
-key names under the source. When CMDB can identify the prefix for your source,
-it makes merge operations more efficient, helps provide semantic context
-for your key names, and makes it easier to identify and avoid naming collisions
-between different sources.
 
 Examples:
 
