@@ -14,6 +14,9 @@ STDOUT.sync = STDERR.sync = true
 lib_dir = File.expand_path('../../../lib', __FILE__)
 $LOAD_PATH << lib_dir unless $LOAD_PATH.include?(lib_dir)
 
+require 'coveralls'
+Coveralls.wear_merged!
+
 require 'cmdb'
 
 module FakeAppHelper
@@ -35,14 +38,6 @@ module FakeAppHelper
 
   def app_env
     @app_env ||= {}
-  end
-
-  def fake_var_lib
-    fake_path('var', 'lib', 'cmdb')
-  end
-
-  def fake_home
-    fake_path('home')
   end
 
   def fake_path(*args)
@@ -71,9 +66,9 @@ module FakeAppHelper
       Cucumber.logger.debug("bash> #{cmd}\n")
       Bundler.with_clean_env do
         runner = Backticks::Runner.new(interactive: true)
-        command = runner.command(cmd)
+        command = runner.run(cmd)
         command.join
-        $CHILD_STATUS.success?.should == true unless ignore_errors
+        command.status.success?.should == true unless ignore_errors
         command.captured_output
       end
     end
@@ -81,8 +76,17 @@ module FakeAppHelper
 end
 
 module ScenarioState
+  def sources
+    @sources ||= []
+  end
+
+  def docker_compose
+    @docker_compose ||= Docker::Compose::Session.new(dir: File.expand_path('../../..', __FILE__))
+  end
+
   def cmdb
-    @cmdb ||= CMDB::Interface.new
+    ss = sources.map { |s| CMDB::Source.create(s) }
+    @cmdb ||= CMDB::Interface.new(*ss)
   end
 end
 
@@ -99,15 +103,8 @@ Before do |scenario|
 
   @original_env = {}
   ENV.each_pair { |k, v| @original_env[k] = v }
-  @old_dirs = CMDB::FileSource.base_directories
 
   ENV['RACK_ENV'] = nil
-  ENV['HOME'] = fake_home
-  CMDB::FileSource.base_directories = [
-    fake_var_lib,
-    File.join(fake_home, '.cmdb')
-  ]
-
   FileUtils.mkdir_p(app_path('config'))
 
   # ensure that shim et al see PWD as app root
@@ -124,9 +121,6 @@ After do |scenario|
   ENV.keys.each { |k| ENV[k] = nil }
   @original_env.each_pair { |k, v| ENV[k] = v }
 
-  CMDB::FileSource.base_directories = @old_dirs
-  FileUtils.rm_rf(fake_var_lib) if File.directory?(fake_var_lib)
-  FileUtils.rm_rf(fake_home) if File.directory?(fake_home)
   FileUtils.rm_rf(app_path('config'))
 
   # Make sure we shut down the shim process (and hopefully any child processes)
@@ -135,18 +129,30 @@ After do |scenario|
 
     begin
       Process.kill('QUIT', @shim_command.pid)
-      @shim_command.join
     rescue
       Cucumber.logger.debug("shim is already dead (#{$ERROR_INFO})\n")
     end
 
-    if scenario.failed?
+    @shim_command.join
+
+    # if scenario.failed?
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
       text = @shim_command.captured_output + @shim_command.captured_error
       text.split(/[\n\r]+/).each do |line|
         Cucumber.logger.debug("!!! #{line}\n")
       end
       Cucumber.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    # end
+  end
+
+  # Reset consul k/v for clean slate
+  if @consul_started
+    m = Docker::Compose::Mapper.new(docker_compose)
+    uri = m.map('consul://consul:8500')
+
+    CMDB::Source.create(uri).instance_eval do
+      path = '/v1/kv'
+      http_delete path, query:'recurse'
     end
   end
 end

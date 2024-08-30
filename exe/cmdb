@@ -20,37 +20,97 @@ CMDB::Commands.constants.each do |konst|
   commands[name] = CMDB::Commands.const_get(konst.to_sym)
 end
 
-# Use a Trollop parser for help/banner display, but do not actually parse
-# anything just yet.
 command_list = commands.keys - ['help']
 command_info = command_list.map { |c| "       * #{c}" }.join("\n")
-p = Trollop::Parser.new do
+
+# Use a Trollop parser for help/banner display, but do not actually parse
+# anything just yet.
+parser = Trollop::Parser.new do
   version "cmdb #{gemspec_version} (c) 2013-2014 RightScale, Inc."
   banner <<-EOS
 A command-line interface for configuration management.
 
 Usage:
-       cmdb <command> [options]
+       cmdb [options] <command> [command-options]
 
 Where <command> is one of:
 #{command_info}
 
-To get help on a command:
-       cmdb help command
+To get help on a specific command and its options:
+       cmdb help <command>
+
+Common options that apply to all commands:
   EOS
+
+  opt :source,
+      "Source of CMDB inputs e.g. file:///foo.yml or consul://localhost",
+      type: :string,
+      multi: true
+
+  opt :quiet,
+      "Suppress unnecessary output",
+      default: false
 
   stop_on commands.keys
 end
 
-Trollop.with_standard_exception_handling p do
-  raise Trollop::HelpNeeded if ARGV.empty?
-  p.parse ARGV
-  cmd = ARGV.shift
-  klass = commands[cmd]
+subcommand = nil
+options    = nil
 
-  if klass
-    klass.create.run
+Trollop.with_standard_exception_handling parser do
+  raise Trollop::HelpNeeded if ARGV.empty?
+
+  # Apply global options
+  options = parser.parse ARGV
+  CMDB.log.level = Logger::FATAL if options[:quiet]
+
+  # Identify the subcommand and run it (or print help).
+  raise Trollop::HelpNeeded if ARGV.empty?
+  subcommand = ARGV.shift
+end
+
+begin
+  if options[:source].empty?
+    sources = CMDB::Source.detect
   else
-    raise(ArgumentError, "Unrecognized command #{cmd}")
+    sources = options[:source].map do |source|
+      CMDB::Source.create(source)
+    end
   end
+
+  klass = commands[subcommand]
+  unless klass
+    CMDB.log.fatal "Unrecognized command '#{cmd}'; try 'cmdb --help'"
+    exit 100
+  end
+
+  interface = CMDB::Interface.new(*sources)
+  klass.create(interface).run
+rescue CMDB::BadKey => e
+  CMDB.log.fatal "CMDB: Bad Key: malformed CMDB key '#{e.key}'"
+  exit 1
+rescue CMDB::BadValue => e
+  CMDB.log.fatal "CMDB: Bad Value: illegal value for CMDB key '#{e.key}' in source #{e.uri}"
+  exit 2
+rescue CMDB::BadData => e
+  CMDB.log.fatal "CMDB: Bad Data: malformed CMDB data in source #{e.uri}"
+  exit 3
+rescue CMDB::ValueConflict => e
+  CMDB.log.fatal "CMDB: Value Conflict: #{e.message}"
+  e.sources.each do |s|
+    CMDB.log.fatal " - #{s.uri}"
+  end
+  exit 4
+rescue CMDB::NameConflict => e
+  CMDB.log.fatal "CMDB: Name Conflict: #{e.message}"
+  e.keys.each do |k|
+    CMDB.log.fatal " - #{k}"
+  end
+  exit 4
+rescue CMDB::EnvironmentConflict => e
+  CMDB.log.fatal "CMDB: Environment Conflict: #{e.message}"
+  exit 5
+rescue Errno::ENOENT => e
+  CMDB.log.fatal "CMDB: missing file or directory #{e.message}"
+  exit 6
 end

@@ -1,0 +1,23 @@
+#! /bin/sh
+
+tcptest() {
+  nc -w 1 $1 $2 < /dev/null > /dev/null 2> /dev/null
+}
+
+if [ $# -gt 0 ]; then
+  args="$@"
+elif tcptest consul 8500; then
+  args="--source=consul://consul"
+elif tcptest localhost 8500; then
+  args="--source=consul://localhost"
+else
+  echo 'cmdb: No k/v source detected; running shell demo with fake source!'
+  args="--source=memory:"
+fi
+
+if gem list -i pry > /dev/null; then
+  pry="-rpry"
+fi
+
+echo "+ cmdb $args"
+exec ruby -Ilib $pry exe/cmdb $args shell

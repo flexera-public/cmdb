@@ -1,0 +1,7 @@
+Dockerfile
+features
+fixtures
+spec
+*.md
+!.git
+.*

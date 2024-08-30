@@ -1,15 +1,6 @@
 # encoding: utf-8
 describe CMDB::Interface do
-  @@subject = CMDB::Interface.new
-  before(:all) do
-    @original_sources = @@subject.instance_variable_get(:@sources)
-  end
-
-  after(:all) do
-    @@subject.instance_variable_set(:@sources, @original_source)
-  end
-
-  let(:source) { double('properly-initialized FileSource') }
+  let(:source) { double('properly-initialized Source::File') }
 
   before(:each) do
     subject.instance_variable_set(:@sources, [source])

@@ -1,22 +1,22 @@
 # encoding: utf-8
 # Construct a shim in process; do not actually run it.
-When /^I run the shim with(out)? "--user=?(.*)"$/ do |negatory, user|
+When /^I run Commands::Shim with(out)? "user:?(.*)"$/ do |negatory, user|
   command = ['ls']
   @shim_in_process_output = StringIO.new
   @shim_logger = Logger.new(@shim_in_process_output)
+  @interface = CMDB::Interface.new
 
-  @shim = if negatory
-            CMDB::Commands::Shim.new(command, quiet: true)
-          else
-            CMDB::Commands::Shim.new(command, quiet: true, user: user)
-          end
+  opts = {rewrite:false, pretend:false, user:nil}
+  opts[:user] = user unless negatory
+
+  @shim = CMDB::Commands::Shim.new(@interface, command, **opts)
 
   CMDB.log = @shim_logger
 end
 
 # Run the shim in process; stub syscalls to verify correct behavior without
 # doing anything nasty.
-Then /^the shim should (not )?setuid( to "(.*)")?$/ do |negatory, _, user|
+Then /^the command should (not )?setuid( to "(.*)")?$/ do |negatory, _, user|
   command = ['ls']
   begin
     allow(@shim).to receive(:exec).with(*command)

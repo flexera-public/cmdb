@@ -4,13 +4,15 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'rake'
-gem 'backticks'
-gem 'cucumber'
-gem 'rspec'
 
 group :test do
+  gem 'backticks', '1.0.0rc2'
+  gem 'docker-compose', '1.0.0rc3'
+  gem 'cucumber'
+  gem 'rspec'
   gem 'rubocop'
   gem 'webmock'
+  gem 'coveralls', require: false
 end
 
 group :development do

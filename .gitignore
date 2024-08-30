@@ -1,3 +1,8 @@
+# As a best practice, allow the committed dependencies to "float" so that
+# we are more likely to discover interface-breaking changes in our
+# dependencies before our clients do.
+Gemfile.lock
+
 # simplecov/rcov generated
 coverage
 coverage.data
@@ -12,6 +17,9 @@ doc
 # bundler
 .bundle
 pkg
+
+# pry
+.byebug_history
 
 # Have editor/IDE/OS specific files you need to ignore? Consider using a global gitignore:
 #

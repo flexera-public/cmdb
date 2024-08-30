@@ -1,12 +1,11 @@
-sudo: false
+sudo: required
+dist: trusty
 language: ruby
 rvm:
 - 2.1
-bundler_args: --without development
+- 2.3
 before_install:
-- gem install --no-document -v '~> 1.10' bundler
+- sudo apt-get -y install python-pip && sudo pip install docker-compose && docker-compose -v
+- gem install --no-document -v '~> 1.12' bundler
 before_script:
 - bundle install
-script: 
-- bundle exec rake spec
-- bundle exec rake cucumber

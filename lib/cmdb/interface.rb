@@ -3,31 +3,20 @@ require 'json'
 
 module CMDB
   class Interface
-    # Create a new instance of the CMDB interface.
-    # @option settings [String] root name of subkey to consider as root
-    def initialize(settings = {})
-      @root = settings[:root] if settings
-
-      namespaces = {}
-
-      load_file_sources(namespaces)
-      check_overlap(namespaces)
-
-      @sources = []
-      # Load from consul source first if one is available.
-      unless ConsulSource.url.nil?
-        if ConsulSource.prefixes.nil? || ConsulSource.prefixes.empty?
-          @sources << ConsulSource.new('')
-        else
-          ConsulSource.prefixes.each do |prefix|
-            @sources << ConsulSource.new(prefix)
-          end
-        end
+    # Create a new instance of the CMDB interface with the specified sources.
+    # @param [Array] sources list of String or URI source locations
+    # @see Source.create for information on how to specify source URLs
+    def initialize(*sources)
+      # ensure no two sources share a prefix
+      prefixes = {}
+      sources.each do |s|
+        next if s.prefix.nil?
+        prefixes[s.prefix] ||= []
+        prefixes[s.prefix] << s
       end
-      # Register valid sources with CMDB
-      namespaces.each do |_, v|
-        @sources << v.first
-      end
+      check_overlap(prefixes)
+
+      @sources = sources.dup
     end
 
     # Retrieve the value of a CMDB key, searching all sources in the order they were initialized.
@@ -57,6 +46,25 @@ module CMDB
       get(key) || raise(MissingKey.new(key))
     end
 
+    # Set the value of a CMDB key.
+    #
+    # @return [Source,nil] the source that accepted the write, if any
+    # @raise [BadKey] if the key name is malformed
+    def set(key, value)
+      raise BadKey.new(key) unless key =~ VALID_KEY
+
+      wrote = nil
+      @sources.each do |s|
+        if s.respond_to?(:set)
+          if s.set(key, value)
+            wrote = s
+            break
+          end
+        end
+      end
+      wrote
+    end
+
     # Enumerate all of the keys in the CMDB.
     #
     # @yield every key/value in the CMDB
@@ -71,6 +79,21 @@ module CMDB
       self
     end
 
+    # @return [Hash] all keys/values that match query
+    # @param [String,Regexp] query key name prefix or pattern to search for
+    def search(query)
+      query = Regexp.new('^' + Regexp.escape(query)) unless query.is_a?(Regexp)
+      result = {}
+
+      @sources.each do |s|
+        s.each_pair do |k, v|
+          result[k] = v if k =~ query
+        end
+      end
+
+      result
+    end
+
     # Transform the entire CMDB into a flat Hash that can be merged into ENV.
     # Key names are transformed into underscore-separated, uppercase strings;
     # all runs of non-alphanumeric, non-underscore characters are tranformed
@@ -82,19 +105,19 @@ module CMDB
     # rather than returning bad data.
     #
     # @raise [NameConflict] if two or more key names transform to the same
-    def to_h
+    def to_env
       values = {}
-      sources = {}
+      originals = {}
 
-      each_pair do |key, value|
-        env_key = key_to_env(key)
-        value = JSON.dump(value) unless value.is_a?(String)
-
-        if sources.key?(env_key)
-          raise NameConflict.new(env_key, [sources[env_key], key])
-        else
-          sources[env_key] = key
-          values[env_key] = value_to_env(value)
+      @sources.each do |s|
+        s.each_pair do |k, v|
+          env = key_to_env(k, s)
+          if (orig = originals[env])
+            raise NameConflict.new(env, [orig, k])
+          else
+            values[env] = value_to_env(v)
+            originals[env] = k
+          end
         end
       end
 
@@ -103,48 +126,25 @@ module CMDB
 
     private
 
-    # Scan for CMDB data files and index them by namespace
-    def load_file_sources(namespaces)
-      # Consult standard base directories for data files
-      directories = FileSource.base_directories
+    # Check that no two sources share a prefix. Raise an exception if any
+    # overlap is detected.
+    def check_overlap(prefix_sources)
+      overlapping = prefix_sources.select { |_, sources| sources.size > 1 }
+      overlapping.each do |p, sources|
+        exc = ValueConflict.new(p, sources)
 
-      # Also consult working dir in development environments
-      if CMDB.development?
-        local_dir = File.join(Dir.pwd, '.cmdb')
-        directories += [local_dir]
-      end
-
-      directories.each do |dir|
-        (Dir.glob(File.join(dir, '*.js')) + Dir.glob(File.join(dir, '*.json'))).each do |filename|
-          source = FileSource.new(filename, @root)
-          namespaces[source.prefix] ||= []
-          namespaces[source.prefix] << source
-        end
-
-        (Dir.glob(File.join(dir, '*.yml')) + Dir.glob(File.join(dir, '*.yaml'))).each do |filename|
-          source = FileSource.new(filename, @root)
-          namespaces[source.prefix] ||= []
-          namespaces[source.prefix] << source
-        end
-      end
-    end
-
-    # Check for overlapping namespaces and react appropriately. This can happen when a file
-    # of a given name is located in more than one of the key-search directories. We tolerate
-    # this in development mode, but raise an exception otherwise.
-    def check_overlap(namespaces)
-      overlapping = namespaces.select { |_, sources| sources.size > 1 }
-      overlapping.each do |ns, sources|
-        exc = ValueConflict.new(ns, sources)
-
-        CMDB.log.warn exc.message
-        raise exc unless CMDB.development?
+        CMDB.log.error exc.message
+        raise exc
       end
     end
 
     # Make an environment variable out of a key name
-    def key_to_env(key)
-      env_name = key
+    def key_to_env(key, source)
+      if source.prefix
+        env_name = key[source.prefix.size+1..-1]
+      else
+        env_name = key.dup
+      end
       env_name.gsub!(/[^A-Za-z0-9_]+/, '_')
       env_name.upcase!
       env_name
